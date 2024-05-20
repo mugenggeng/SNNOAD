@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This is a PyTorch implementation for our paper "[`Explicit Long-term Gated Compressor for Online Action Detection and Anticipation`](https://echo0125.github.io/mat/)".
+This is a PyTorch implementation for our paper "`Explicit Long-term Gated Compressor for Online Action Detection and Anticipation`".
 
 ![network](demo/Framework1.png?raw=true)
 
@@ -148,14 +148,13 @@ There are *two kinds* of evaluation methods in our code.
 
 |       method      | feature   |  mAP (%)  |                             config                                                |   checkpoint   |
 |  :--------------: |  :-------------:  |  :-----:  |  :-----------------------------------------------------------------------------:  |  :----------:  |
-|  MAT           |  Anet v1.3 |   70.5    | [yaml](configs/THUMOS/MAT/mat_long_256_work_8_anet_1x.yaml) | [Download](https://drive.google.com/file/d/1NyhGSSIBd_T9osbnc2_S2OZG4HoMcvoX/view?usp=drive_link) |
-|  MAT           |    Kinetics    |   71.6    | [yaml](configs/THUMOS/MAT/mat_long_256_work_8_kinetics_1x.yaml)      | [Download](https://drive.google.com/file/d/1W3OlCOz4rkRq4MV_RvO8mHLzmdZrrnbF/view?usp=drive_link) |
+|  GatedOAD           |    Kinetics    |   72.9    | [yaml](configs/THUMOS/MAT/mat_long_256_work_8_kinetics_1x.yaml)      | [Download](https://drive.google.com/file/d/1W3OlCOz4rkRq4MV_RvO8mHLzmdZrrnbF/view?usp=drive_link) |
 
 ### EK100
 
 |  method  |    feature    |  verb (overall)  |  noun (overall)  |  action (overall)  |  config  |                                checkpoint                                |
 |  :----:  |  :-------------:  |  :------------:  |  :------------:  |  :--------------:  |  :----:  |  :--------------------------------------------------------------------:  |
-|  MAT  |  RGB+FLOW  |      35.0      |       38.8       |        19.5        |  [yaml](configs/EK100/MAT/mat_long_64_work_5_kinetics_1x.yaml) | [Download](https://drive.google.com/file/d/1qVz1EuIZ7pUKRjn2Udq6h82xwDrHDePY/view?usp=drive_link) |
+|  GatedOAD  |  RGB+FLOW  |      35.0      |       41.3       |        19.8        |  [yaml](configs/EK100/MAT/mat_long_64_work_5_kinetics_1x.yaml) | [Download](https://drive.google.com/file/d/1qVz1EuIZ7pUKRjn2Udq6h82xwDrHDePY/view?usp=drive_link) |
 
 ## Citations
 
