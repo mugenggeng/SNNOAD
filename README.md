@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This is a PyTorch implementation for our paper "[`Explicit Long-term Gated Compressor for Online Action Detection and Anticipation`](https://echo0125.github.io/mat/)".
+This is a PyTorch implementation for our paper "[`Explicit Long-term Gated Compressor for Online Action Detection and Anticipation`]".
 
 ![network](demo/Framework1.png?raw=true)
 
