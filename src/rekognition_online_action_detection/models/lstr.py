@@ -1187,7 +1187,7 @@ class LSTR(nn.Module):
             [MS_ConvBlock(dim=embed_dim[0] // 2, output_dim = embed_dim[0] // 2,mlp_ratio=mlp_ratios) for i in range(times)]
         )
 
-        self.fusion1_1 = CGAFusion_SNN(dim=embed_dim[0] // 2)
+        # self.fusion1_1 = CGAFusion_SNN(dim=embed_dim[0] // 2)
 
 
         self.downsample1_2 = MS_DownSampling(
@@ -1203,7 +1203,7 @@ class LSTR(nn.Module):
             [MS_ConvBlock(dim=embed_dim[0], output_dim = embed_dim[0], mlp_ratio=mlp_ratios) for i in range(times)]
         )
 
-        self.fusion1_2 = CGAFusion_SNN(dim=embed_dim[0])
+        # self.fusion1_2 = CGAFusion_SNN(dim=embed_dim[0])
 
 
 
@@ -1221,7 +1221,7 @@ class LSTR(nn.Module):
             [MS_ConvBlock(dim=embed_dim[1], output_dim = embed_dim[1], mlp_ratio=mlp_ratios) for i in range(times)]
         )
 
-        self.fusion2_1 = CGAFusion_SNN(dim=embed_dim[1])
+        # self.fusion2_1 = CGAFusion_SNN(dim=embed_dim[1])
 
 
         self.downsample3 = MS_DownSampling(
@@ -1237,7 +1237,7 @@ class LSTR(nn.Module):
             [MS_ConvBlock(dim=embed_dim[2], output_dim = embed_dim[2], mlp_ratio=mlp_ratios) for i in range(times)]
         )
 
-        self.fusion3_1 = CGAFusion_SNN(dim=embed_dim[2])
+        # self.fusion3_1 = CGAFusion_SNN(dim=embed_dim[2])
         #
 
         #
