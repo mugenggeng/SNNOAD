@@ -5,14 +5,14 @@ import os
 # os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 # print(os.getcwd()+'src/')
 # sys.path.append(os.getcwd()+'/src/')
-sys.path.append('/home/dx/data/houlin/Memory-and-Anticipation-Transformer/src/')
+sys.path.append('/home/dx/data/houlin/RGB_Only/src/')
 from rekognition_online_action_detection.utils.parser import load_cfg
 from rekognition_online_action_detection.utils.env import setup_environment
 from rekognition_online_action_detection.utils.checkpointer import setup_checkpointer
 from rekognition_online_action_detection.utils.logger import setup_logger
 from rekognition_online_action_detection.datasets import build_data_loader
 from rekognition_online_action_detection.models import build_model
-from rekognition_online_action_detection.criterions import build_criterion
+from rekognition_online_action_detection.criterions import build_criterion,BRDLoss,LaSNNLoss
 from rekognition_online_action_detection.optimizers import build_optimizer
 from rekognition_online_action_detection.optimizers import build_scheduler
 from rekognition_online_action_detection.optimizers import build_ema
@@ -37,8 +37,18 @@ def main(cfg):
 
     # Build model
     # print('333333333')
-    model = build_model(cfg, device)
+    model = build_model(cfg,device=device)
 
+    cfg.MODEL.CHECKPOINT = './MatCheckpoints/epoch-19.pth'
+    checkpointer1 = setup_checkpointer(cfg, phase='test')
+    teach_model = build_model(cfg,name='MAT',device=device)
+    checkpointer1.load(teach_model)
+    # teach_model.eval()
+
+    bdr_loss = LaSNNLoss()
+    bdr_loss.to(device)
+    # print(teach_model)
+    # model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
     # model1 = build_model(cfg, device)
     # model1.eval()
     # input1 = torch.randn(1, 1024, 256)
@@ -71,7 +81,9 @@ def main(cfg):
         cfg,
         data_loaders,
         model,
+        teach_model,
         criterion,
+        bdr_loss,
         optimizer,
         scheduler,
         ema,

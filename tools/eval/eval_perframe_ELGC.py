@@ -3,8 +3,6 @@
 
 import logging
 
-import json
-
 logging.basicConfig(level=logging.INFO, format='%(message)s')
 import argparse
 from sklearn.metrics import average_precision_score
@@ -12,19 +10,11 @@ import numpy as np
 import pickle as pkl
 from collections import OrderedDict
 import zlib
-# import gzip
-# import lzwlib
 
 
 def postprocessing1(data_name):
 
     def thumos_postprocessing(ground_truth, prediction, smooth=False, switch=False):
-        """
-        We follow (Shou et al., 2017) and adopt their perframe postprocessing method on THUMOS'14 datset.
-        Source: https://bitbucket.org/columbiadvmm/cdc/src/master/THUMOS14/eval/PreFrameLabeling/compute_framelevel_mAP.m
-        """
-
-        # Simple temporal smoothing via NMS of 5-frames window
         if smooth:
             prob = np.copy(prediction)
             prob1 = prob.reshape(1, prob.shape[0], prob.shape[1])
@@ -56,7 +46,6 @@ def calibrated_average_precision_score(y_true, y_score):
     fp = np.abs(y_true_sorted.astype(float) - 1)
     tps = np.cumsum(tp)
     fps = np.cumsum(fp)
-    # print('aaaa',fps)
     ratio = np.sum(tp == 0) / np.sum(tp)
     cprec = tps / (tps + fps / (ratio + np.finfo(float).eps) + np.finfo(float).eps)
     cap = np.sum(cprec[tp == 1]) / np.sum(tp)
@@ -80,15 +69,6 @@ def perframe_average_precision(ground_truth,
         ground_truth, prediction = postprocessing(ground_truth, prediction)
     ground_truth_list = ground_truth.tolist()
     prediction_list = prediction.tolist()
-    # print('111')
-    # with open("./GT.json", "w") as f:
-    #     f.write(json.dumps(ground_truth_list))
-    #     f.flush()
-    #
-    # with open("./prediction.json", "w") as f:
-    #     f.write(json.dumps(prediction_list))
-    #     f.flush()
-    # Build metrics
     if metrics == 'AP':
         compute_score = average_precision_score
     elif metrics == 'cAP':
@@ -116,39 +96,13 @@ def eval_perframe(pred_scores_file,**kwargs):
 
     pred_scores = pkl.loads(zlib.decompress(data_compressed))
 
-    # with lzwlib.open('data.pkl.lzw', 'wb') as f:
-    #     pkl.dump(pred_scores, f)
-
     cfg = pred_scores['cfg']
     class_names = kwargs.get('class_names', cfg.DATA.CLASS_NAMES)
     perframe_gt_targets = pred_scores['perframe_gt_targets']
     perframe_pred_scores = pred_scores['perframe_pred_scores']
-    anticipation_targets = pred_scores['anticipation_targets']
-    anticipation_scores = pred_scores['anticipation_scores']
     ignore_index = kwargs.get('ignore_index', cfg.DATA.IGNORE_INDEX)
     metrics = kwargs.get('metrics', cfg.DATA.METRICS)
     postprocessing = kwargs.get('postprocessing', postprocessing1(cfg.DATA.DATA_NAME))
-
-    if cfg.MODEL.LSTR.ANTICIPATION_NUM_SAMPLES > 0:
-        maps_list = []
-        for t_a in range(0, cfg.MODEL.LSTR.ANTICIPATION_NUM_SAMPLES):
-            result = perframe_average_precision(
-                np.concatenate(list(anticipation_targets.values()), axis=0),
-                np.concatenate(list(anticipation_scores.values()), axis=0)[:, :, t_a],
-                class_names,
-                ignore_index,
-                metrics,
-                postprocessing
-            )
-            print('Action anticipation ({:.2f}s) perframe m{}: {:.5f}'.format(
-                (t_a + 1) / cfg.DATA.FPS * cfg.MODEL.LSTR.ANTICIPATION_SAMPLE_RATE,
-                cfg.DATA.METRICS, result['mean_AP']
-            ))
-            maps_list.append(result['mean_AP'])
-        print('Action anticipation (mean) perframe m{}: {:.5f}'.format(
-            cfg.DATA.METRICS, np.mean(maps_list)
-        ))
-
     # Compute results
     result = perframe_average_precision(
         np.concatenate(list(perframe_gt_targets.values()), axis=0),

@@ -3,6 +3,7 @@
 
 from .models import build_model
 from .lstr import *
+from .MAT import *
 # from .deco_convnet import *
 # from .mamba import Mamba
 # from .mambair_arch import *

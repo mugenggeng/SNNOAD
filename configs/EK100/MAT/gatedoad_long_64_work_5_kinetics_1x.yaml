@@ -1,7 +1,7 @@
 DATA:
   DATA_NAME: 'EK100'
-  DATA_INFO: './data/data_info.json'
-  DATA_ROOT: './data/EK100'
+  DATA_INFO: '/home/dx/data/houlin/Memory-and-Anticipation-Transformer/data/data_info.json'
+  DATA_ROOT: '/home/dx/data/houlin/Memory-and-Anticipation-Transformer/data/EK100'
 #  DATA_INFO: '/data1/houlin/MATData/data/data_info.json'
 #  DATA_ROOT: '/data1/houlin/MATData/data/thumos14'
 INPUT:
@@ -36,7 +36,7 @@ MODEL:
     FUT_MODULE: [
     [48, 1, True],
     ]
-  CRITERIONS: [['MCE_EQL', {'anno_path': './external/rulstm/RULSTM/data/ek100/'}], ['MCE', {}]]
+  CRITERIONS: [['MCE_EQL', {'anno_path': '/home/dx/data/houlin/Memory-and-Anticipation-Transformer/external/rulstm/RULSTM/data/ek100/'}], ['MCE', {}]]
 DATA_LOADER:
   BATCH_SIZE: 32
   NUM_WORKERS: 8
@@ -52,6 +52,6 @@ SOLVER:
     WARMUP_EPOCHS: 10.0
     WARMUP_METHOD: 'linear'
 
-OUTPUT_DIR: best/checkpoints/noof
+OUTPUT_DIR: /home/dx/data/houlin/RGB_Only_checkpoints/
 
 #OUTPUT_DIR: /data1/houlin/MATData/checkpoints

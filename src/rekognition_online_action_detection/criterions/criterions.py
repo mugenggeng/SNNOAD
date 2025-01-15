@@ -16,7 +16,146 @@ from rekognition_online_action_detection.utils.registry import Registry
 
 CRITERIONS = Registry()
 
+class LaSNNLoss(nn.Module):
+    """PyTorch version of `Masked Generative Distillation`
 
+    Args:
+        student_channels(int): Number of channels in the student's feature map.
+        teacher_channels(int): Number of channels in the teacher's feature map.
+        name (str): the loss name of the layer
+        alpha_mgd (float, optional): Weight of dis_loss. Defaults to 0.00007
+        lambda_mgd (float, optional): masked ratio. Defaults to 0.5
+    """
+
+    def __init__(self,
+                 student_emb=1024,
+                 teacher_emb=1024,
+                 alpha_mgd=0.00007,
+                 fnum=4,
+                 ):
+        super(LaSNNLoss, self).__init__()
+
+        self.alpha_mgd = alpha_mgd
+        self.fnum = fnum
+
+        if student_emb != teacher_emb:
+            self.align = [nn.Conv1d(student_emb, teacher_emb, kernel_size=1, stride=1, padding=0) for _ in range(self.fnum)]
+        else:
+            self.align = None
+
+    def forward(self,
+                preds_S,
+                preds_T):
+        """Forward function.
+        Args:
+            preds_S(Tensor): Bs*D*H*W, student's feature map
+            preds_T(Tensor): Bs*D, teacher's feature map
+        """
+        # assert preds_S.shape[-1:] == preds_T.shape[-1:]
+        # print(len(preds_S),len(preds_T))
+        assert len(preds_S) == len(preds_T)
+        loss = 0.
+        if self.align is not None:
+            assert len(preds_S) == len(self.align)
+            for ps, pt, a in zip(preds_S, preds_T, self.align):
+                loss += self.get_dis_loss(a(ps), pt) * self.alpha_mgd
+        else:
+            # for ps, pt in zip(preds_S, preds_T):
+            #     print(ps.shape,pt.shape)
+            #     loss += self.get_dis_loss(ps, pt) * self.alpha_mgd
+            loss += self.get_dis_loss(preds_S,preds_T) * self.alpha_mgd
+        return loss
+
+    def get_dis_loss(self, preds_S, preds_T):
+        loss_mse = nn.MSELoss(reduction='sum')
+        B,C,N = preds_S.shape
+
+        # new_fea = preds_S.flatten(2).mean(2)
+        # print(new_fea.shape, preds_T.shape)
+
+        dis_loss = loss_mse(preds_S, preds_T) / B
+
+        return dis_loss
+
+@CRITERIONS.register('BRD')
+class BRDLoss(nn.Module):
+    """PyTorch version of `Masked Generative Distillation`
+
+    Args:
+        student_channels(int): Number of channels in the student's feature map.
+        teacher_channels(int): Number of channels in the teacher's feature map.
+        name (str): the loss name of the layer
+        alpha_mgd (float, optional): Weight of dis_loss. Defaults to 0.00007
+        lambda_mgd (float, optional): masked ratio. Defaults to 0.5
+    """
+
+    def __init__(self,
+                 student_emb=1024,
+                 teacher_emb=1024,
+                 alpha_mgd=0.0007,
+                 lambda_mgd=0.15,
+                 use_clip=True,
+                 ):
+        super(BRDLoss, self).__init__()
+        self.alpha_mgd = alpha_mgd
+        self.lambda_mgd = lambda_mgd
+
+        if student_emb != teacher_emb:
+            self.align = nn.Conv2d(student_emb, teacher_emb, kernel_size=1, stride=1, padding=0)
+        else:
+            self.align = None
+
+        self.use_clip = use_clip
+
+        self.generation = nn.Sequential(
+            nn.Conv1d(teacher_emb, teacher_emb, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv1d(teacher_emb, teacher_emb, kernel_size=3, padding=1))
+
+    def forward(self,
+                preds_S,
+                preds_T):
+        """Forward function.
+        Args:
+            preds_S(Tensor): Bs*D*H*W, student's feature map
+            preds_T(Tensor): Bs*D, teacher's feature map
+        """
+        # assert preds_S.shape[-1:] == preds_T.shape[-1:]
+        # preds_S = torch.stack(preds_S)
+        # preds_T = torch.stack(preds_T)
+        if self.align is not None:
+            preds_S = self.align(preds_S)
+
+        if self.use_clip:
+            # preds_T = torch.clip(preds_T, preds_T.min(), preds_S.max())
+            preds_T = preds_T / (preds_T.max()) * preds_S.max()
+
+        loss = self.get_dis_loss(preds_S, preds_T) * self.alpha_mgd
+
+        return loss
+
+    def get_dis_loss(self, preds_S, preds_T):
+        # loss_mse = nn.MSELoss(reduction='sum')
+        loss_mse = nn.KLDivLoss(reduction='sum')
+        log_soft = nn.LogSoftmax(dim=1)
+        soft = nn.Softmax(dim=1)
+        B, C, N = preds_S.shape
+
+        device = preds_S.device
+        mat = torch.rand((B, C, 1)).to(device)
+        # mat = torch.rand((N,1,H,W)).to(device)
+        mat = torch.where(mat < self.lambda_mgd, 0, 1).to(device)
+
+        masked_fea = torch.mul(preds_S, mat)
+        # print(masked_fea.shape)
+        new_fea = self.generation(masked_fea)
+        # new_fea = new_fea.flatten(2).mean(2)
+        # print(new_fea.shape, preds_T.shape)
+        new_fea = log_soft(new_fea)
+        preds_T = soft(preds_T)
+        dis_loss = loss_mse(new_fea, preds_T)
+        # print(dis_loss)
+        return dis_loss
 @CRITERIONS.register('BCE')
 class BinaryCrossEntropyLoss(nn.Module):
 

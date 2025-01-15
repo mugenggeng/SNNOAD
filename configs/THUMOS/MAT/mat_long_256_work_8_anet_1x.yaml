@@ -52,5 +52,5 @@ SOLVER:
     WARMUP_EPOCHS: 8.0
     WARMUP_METHOD: 'linear'
 
-OUTPUT_DIR: checkpoints
+OUTPUT_DIR: ../RGB_Only_checkpoints/
 #OUTPUT_DIR: /data1/houlin/MATData/checkpoints

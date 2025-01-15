@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 import sys
 import os
-sys.path.append(os.getcwd()+'/src/')
+sys.path.append('/home/dx/data/houlin/RGB_Only/src/')
 from rekognition_online_action_detection.utils.parser import load_cfg
 from rekognition_online_action_detection.utils.env import setup_environment
 from rekognition_online_action_detection.utils.checkpointer import setup_checkpointer

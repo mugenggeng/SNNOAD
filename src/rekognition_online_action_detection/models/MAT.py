@@ -1,32 +1,32 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
-
+import random
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from . import transformer as tr
 
 from .models import META_ARCHITECTURES as registry
-from .feature_head import build_feature_head
+from .feature_head_MAT import BaseFeatureHead
 
 
-class LSTR(nn.Module):
+class MAT(nn.Module):
 
     def __init__(self, cfg):
-        super(LSTR, self).__init__()
+        super(MAT, self).__init__()
 
         self.cfg = cfg
         # Build long feature heads
         self.long_memory_num_samples = cfg.MODEL.LSTR.LONG_MEMORY_NUM_SAMPLES
         self.long_enabled = self.long_memory_num_samples > 0
         if self.long_enabled:
-            self.feature_head_long = build_feature_head(cfg)
+            self.feature_head_long = BaseFeatureHead(cfg)
 
         # Build work feature head
         self.work_memory_num_samples = cfg.MODEL.LSTR.WORK_MEMORY_NUM_SAMPLES
         self.work_enabled = self.work_memory_num_samples > 0
         if self.work_enabled:
-            self.feature_head_work = build_feature_head(cfg)
+            self.feature_head_work = BaseFeatureHead(cfg)
 
         self.anticipation_num_samples = cfg.MODEL.LSTR.ANTICIPATION_NUM_SAMPLES
         self.future_num_samples = cfg.MODEL.LSTR.FUTURE_NUM_SAMPLES
@@ -41,19 +41,23 @@ class LSTR(nn.Module):
 
         # Build position encoding
         self.pos_encoding = tr.PositionalEncoding(self.d_model, self.dropout)
-
+        self.group = self.cfg.MODEL.LSTR.GROUPS
         # Build LSTR encoder
         if self.long_enabled:
             self.enc_queries = nn.ModuleList()
             self.enc_modules = nn.ModuleList()
+            # self.enc_mode = nn.ModuleList()
+            # self.cross_attention = tr.MultiheadAttention(self.d_model,1)
+            index = 0
             for param in cfg.MODEL.LSTR.ENC_MODULE:
                 if param[0] != -1:
                     self.enc_queries.append(nn.Embedding(param[0], self.d_model))
-                    enc_layer = tr.TransformerDecoderLayer(
+                    enc_layer = tr.LongMemLayer(
                         self.d_model, self.num_heads, self.dim_feedforward,
-                        self.dropout, self.activation)
+                        self.dropout, self.activation,short=(index==0),gru=True,atten=True)
                     self.enc_modules.append(tr.TransformerDecoder(
-                        enc_layer, param[1], tr.layer_norm(self.d_model, param[2])))
+                            enc_layer, param[1], tr.layer_norm(self.d_model, param[2])))
+                    # self.enc_modules.append(self.enc_mode)
                 else:
                     self.enc_queries.append(None)
                     enc_layer = tr.TransformerEncoderLayer(
@@ -61,7 +65,10 @@ class LSTR(nn.Module):
                         self.dropout, self.activation)
                     self.enc_modules.append(tr.TransformerEncoder(
                         enc_layer, param[1], tr.layer_norm(self.d_model, param[2])))
+                index = index+1
             self.average_pooling = nn.AdaptiveAvgPool1d(1)
+            self.max_polling = nn.AdaptiveMaxPool1d(1)
+            # self.norm = nn.LayerNorm(self.d_model)
         else:
             self.register_parameter('enc_queries', None)
             self.register_parameter('enc_modules', None)
@@ -71,7 +78,7 @@ class LSTR(nn.Module):
             param = cfg.MODEL.LSTR.DEC_MODULE
             dec_layer = tr.TransformerDecoderLayer(
                 self.d_model, self.num_heads, self.dim_feedforward,
-                self.dropout, self.activation)
+                self.dropout, self.activation,gru=True,atten=True)
             self.dec_modules = tr.TransformerDecoder(
                 dec_layer, param[1], tr.layer_norm(self.d_model, param[2]))
         else:
@@ -81,36 +88,41 @@ class LSTR(nn.Module):
                 self.dropout, self.activation)
             self.dec_modules = tr.TransformerEncoder(
                 dec_layer, param[1], tr.layer_norm(self.d_model, param[2]))
+        # self.norm = nn.LayerNorm(self.d_model)
+        # short_layer = tr.TransformerEncoderLayer(
+        #     self.d_model, self.num_heads, self.dim_feedforward,
+        #     self.dropout, self.activation)
+        # self.short_modules = tr.TransformerEncoder(
+        #     short_layer, param[1], tr.layer_norm(self.d_model, param[2]))
 
+        # self.final_query = nn.Embedding(cfg.MODEL.LSTR.FUT_MODULE[0][0], self.d_model)
         # Build Anticipation Generation
         if self.future_enabled:
             param = cfg.MODEL.LSTR.GEN_MODULE
             self.gen_query = nn.Embedding(param[0], self.d_model)
             gen_layer = tr.TransformerDecoderLayer(
                 self.d_model, self.num_heads, self.dim_feedforward,
-                self.dropout, self.activation)
+                self.dropout, self.activation,gru=True,atten=True)
             self.gen_layer = tr.TransformerDecoder(
                 gen_layer, param[1], tr.layer_norm(self.d_model, param[2])
             )
             self.final_query = nn.Embedding(cfg.MODEL.LSTR.FUT_MODULE[0][0], self.d_model)
-            # CCI
+        #     # CCI
             self.work_fusions = nn.ModuleList()
             self.fut_fusions = nn.ModuleList()
             for i in range(cfg.MODEL.LSTR.CCI_TIMES):
                 work_enc_layer = tr.TransformerDecoderLayer(
                     self.d_model, self.num_heads, self.dim_feedforward,
-                    self.dropout, self.activation)
+                    self.dropout, self.activation,gru=True,atten=True)
                 self.work_fusions.append(tr.TransformerDecoder(
                     work_enc_layer, 1, tr.layer_norm(self.d_model, True)))
                 if i != self.cfg.MODEL.LSTR.CCI_TIMES - 1:
                     fut_enc_layer = tr.TransformerDecoderLayer(
                         self.d_model, self.num_heads, self.dim_feedforward,
-                        self.dropout, self.activation)
+                        self.dropout, self.activation,gru=True,atten=True)
                     self.fut_fusions.append(tr.TransformerDecoder(
                         fut_enc_layer, 1, tr.layer_norm(self.d_model, True)))
-        self.num_layers = 1
-        self.gru = nn.GRU(self.d_model, self.d_model, self.num_layers, batch_first=True)
-        self.h0 = torch.zeros(self.num_layers, 1, self.d_model)
+
         # Build classifier
         self.classifier = nn.Linear(self.d_model, self.num_classes)
         if self.cfg.DATA.DATA_NAME == 'EK100':
@@ -118,7 +130,7 @@ class LSTR(nn.Module):
             self.classifier_noun = nn.Linear(self.d_model, 301)
             self.dropout_cls = nn.Dropout(0.8)
 
-    def cci(self, memory, output, mask):
+    def cci(self, memory, output, mask, short_mem):
         # print(memory.shape,output.shape,'memory.shape,output.shape')
         his_memory = torch.cat([memory, output])
         # print(his_memory.shape,'his_memory.shape')
@@ -132,9 +144,7 @@ class LSTR(nn.Module):
             mask1 = torch.zeros((output.shape[0], memory.shape[0])).to(output.device)
             mask2 = torch.zeros((output.shape[0], future.shape[0])).to(output.device)
             the_mask = torch.cat((mask1, mask, mask2), dim=-1)
-            # print(memory.shape,output.shape,future.shape,'memory.shape,output.shape,future.shape11')
             total_memory = torch.cat([memory, output, future])
-            # print(total_memory.shape,'total_memory.shape11')
             output = self.work_fusions[i](output, total_memory, tgt_mask=mask, memory_mask=the_mask, knn=True)
             # print(output.shape,'output.shape')
             short_rep.append(output)
@@ -155,12 +165,22 @@ class LSTR(nn.Module):
         return short_rep, future_rep
 
     def forward(self, visual_inputs, motion_inputs, memory_key_padding_mask=None,epoch=1):
+        # print(visual_inputs.shape)
+        # print(self.long_memory_num_samples)
+        feature_TW = list()
+        feature_TF = list()
         if self.long_enabled:
             # Compute long memories
             the_long_memories = self.feature_head_long(
                 visual_inputs[:, :self.long_memory_num_samples],
                 motion_inputs[:, :self.long_memory_num_samples]).transpose(0, 1)
-            # print(the_long_memories.shape,'print(work_scores[0].shape, fut_scores[0].shape)111')
+
+            work_memories = self.feature_head_work(
+                visual_inputs[:, self.long_memory_num_samples:],
+                motion_inputs[:, self.long_memory_num_samples:],
+            ).transpose(0, 1)
+            work_memories = self.pos_encoding(work_memories, padding=0)
+            # short_mem = self.short_modules(short_mem)
             if len(self.enc_modules) > 0:
                 enc_queries = [
                     enc_query.weight.unsqueeze(1).repeat(1, the_long_memories.shape[1], 1)
@@ -170,47 +190,47 @@ class LSTR(nn.Module):
 
                 # Encode long memories
                 if enc_queries[0] is not None:
-                    # Make sure mask -inf not influence the output
-                    # print(the_long_memories.shape,'the_long_memories.shape')
                     if self.cfg.MODEL.LSTR.GROUPS > 0 and (
                             memory_key_padding_mask == float('-inf')).sum() < self.cfg.MODEL.LSTR.GROUPS:
+
                         T = the_long_memories.shape[0] // self.cfg.MODEL.LSTR.GROUPS
                         enc_query = enc_queries[0]
                         long_memories = []
+                        max_mem = []
+                        avg_mem = []
                         for i in range(self.cfg.MODEL.LSTR.GROUPS):
-                            # print(i,T,the_long_memories[i * T:(i + 1) * T].shape,'i,T,the_long_memories[i * T:(i + 1) * T].shape')
-                            out = self.enc_modules[0](enc_query, the_long_memories[i * T:(i + 1) * T],
+                            out = self.enc_modules[0](enc_query,the_long_memories[i * T:(i + 1) * T],
                                                       memory_key_padding_mask=memory_key_padding_mask[:,
-                                                                              i * T:(i + 1) * T], knn=True)
-                            # print(out.shape,'out.shape1')
+                                                                              i * T:(i + 1) * T], knn=True,short_mem = work_memories)
+                            weight = self.max_polling(out.permute(1, 2, 0)).permute(2, 0, 1)
                             out = self.average_pooling(out.permute(1, 2, 0)).permute(2, 0, 1)
-                            # print(out.shape,'out.shape2')
+                            out = out+weight
+                            # max_mem.append(weight)
+                            # avg_mem.append(out)
                             long_memories.append(out)
                         long_memories = torch.cat(long_memories)
-                        # print(long_memories.shape,'long_memories.shape==1')
+
                     else:
+                        # print(type(the_long_memories))
+                        # print(self.enc_modules[0])
                         long_memories = self.enc_modules[0](enc_queries[0], the_long_memories,
-                                                            memory_key_padding_mask=memory_key_padding_mask, knn=True)
+                                                            memory_key_padding_mask=memory_key_padding_mask, knn=True,short_mem = work_memories)
+                        # print(type(long_memories))
                 else:
                     long_memories = self.enc_modules[0](long_memories)
+
                 for enc_query, enc_module in zip(enc_queries[1:], self.enc_modules[1:]):
                     if enc_query is not None:
                         long_memories = enc_module(enc_query, long_memories, knn=True)
                     else:
+                        # print(long_memories.shape)
                         long_memories = enc_module(long_memories, knn=True)
-        # print(long_memories.shape,'long_memories.shape==2')
-        # Concatenate memories
+
         if self.long_enabled:
             memory = long_memories
-        # print(memory.shape,'memory.shape')
+        # feature_T.append(long_memories)
         if self.work_enabled:
-            # Compute work memories
-            work_memories = self.pos_encoding(self.feature_head_work(
-                visual_inputs[:, self.long_memory_num_samples:],
-                motion_inputs[:, self.long_memory_num_samples:],
-            ).transpose(0, 1), padding=0)
-            # take corresponding anticipation tokens
-            if self.anticipation_num_samples > 0:
+            if self.anticipation_num_samples > 0 and self.future_enabled:
                 anticipation_queries = self.pos_encoding(
                     self.final_query.weight[:self.cfg.MODEL.LSTR.ANTICIPATION_LENGTH
                                             :self.cfg.MODEL.LSTR.ANTICIPATION_SAMPLE_RATE, ...].unsqueeze(1).repeat(1,
@@ -224,13 +244,13 @@ class LSTR(nn.Module):
             mask = tr.generate_square_subsequent_mask(
                 work_memories.shape[0])
             mask = mask.to(work_memories.device)
-
+            # print(work_memories.shape,memory.shape,'11')
             if self.long_enabled:
                 output = self.dec_modules(
                     work_memories,
                     memory=memory,
                     tgt_mask=mask,
-                    knn=True,
+                    knn=True
                 )
             else:
                 output = self.dec_modules(
@@ -238,13 +258,10 @@ class LSTR(nn.Module):
                     src_mask=mask,
                     knn=True
                 )
-        indetity = output
-        B = output.shape[1]
-        h0 = self.h0.expand(-1, B, -1).to(output.device)
-        output, _ = self.gru(output.permute(1, 0, 2))
-        output = output.permute(1, 0, 2)
+        work_new = list()
+        fut_new = list()
         if self.future_enabled:
-            works, futs = self.cci(memory, output, mask)
+            works, futs = self.cci(memory, output, mask, work_memories)
             work_scores = []
             fut_scores = []
             for i, work in enumerate(works):
@@ -255,32 +272,40 @@ class LSTR(nn.Module):
                     work_scores.append(self.classifier(self.dropout_cls(work)).transpose(0, 1))
                 else:
                     work_scores.append(self.classifier(work).transpose(0, 1))
+                    work_new.append(self.classifier(work).transpose(0, 1))
             for i, fut in enumerate(futs):
                 # print(fut.shape,'fut.shape')
                 if i == 0:
                     fut_scores.append(self.classifier(
                         F.interpolate(fut.permute(1, 2, 0), size=self.future_num_samples).permute(2, 0, 1)).transpose(0,
                                                                                                                       1))
+                    fut_new.append(F.interpolate(fut.permute(1, 2, 0), size=self.future_num_samples).permute(2, 0, 1).permute(1, 0, 2))
                 else:
                     fut_scores.append(self.classifier(fut).transpose(0, 1))
+                    fut_new.append(fut.permute(1,0,2))
                     if i == len(futs) - 1 and self.cfg.DATA.DATA_NAME == 'EK100':
                         fut_noun_score = self.classifier_noun(fut).transpose(0, 1)
                         fut_verb_score = self.classifier_verb(fut).transpose(0, 1)
             # print(work_scores[0].shape, fut_scores[0].shape)
-            return (work_scores, fut_scores) if self.cfg.DATA.DATA_NAME != 'EK100' else (
+            feature_TW.append(works[-1])
+            feature_TW.append(work_scores[-1])
+
+            feature_TF.append(futs[-1])
+            feature_TF.append(fut_scores[-1])
+            return (work_scores, fut_scores),feature_TW, feature_TF if self.cfg.DATA.DATA_NAME != 'EK100' else (
             work_scores, fut_scores, noun_score, fut_noun_score, verb_score, fut_verb_score)
 
         # Compute classification score
         score = self.classifier(output)
-
+        # print(score.shape)
         return score.transpose(0, 1)
 
 
-@registry.register('LSTR')
-class LSTRStream(LSTR):
+@registry.register('MAT')
+class MATStream(MAT):
 
     def __init__(self, cfg):
-        super(LSTRStream, self).__init__(cfg)
+        super(MATStream, self).__init__(cfg)
 
         ############################
         # Cache for stream inference
@@ -297,13 +322,19 @@ class LSTRStream(LSTR):
         assert self.long_enabled, 'Long-term memory cannot be empty for stream inference'
         assert len(self.enc_modules) > 0, 'LSTR encoder cannot be disabled for stream inference'
 
+        work_memories = self.pos_encoding(self.feature_head_work(
+            work_visual_inputs,
+            work_motion_inputs,
+        ).transpose(0, 1), padding=self.long_memory_num_samples)
+
         if (long_visual_inputs is not None) and (long_motion_inputs is not None):
             # Compute long memories
             long_memories = self.feature_head_long(
                 long_visual_inputs,
                 long_motion_inputs,
             ).transpose(0, 1)
-
+            # work_memories = self.short_modules(work_memories)
+            # print('1111')
             if self.long_memories_cache is None:
                 self.long_memories_cache = long_memories
             else:
@@ -320,9 +351,34 @@ class LSTRStream(LSTR):
                 for enc_query in self.enc_queries
             ]
 
+            # if self.cfg.MODEL.LSTR.GROUPS > 0 and (
+            #         memory_key_padding_mask == float('-inf')).sum() < self.cfg.MODEL.LSTR.GROUPS:
+            #
+            #     T = long_memories.shape[0] // self.cfg.MODEL.LSTR.GROUPS
+            #     enc_query = enc_queries[0]
+            #     long_memories_list = []
+            #     max_mem = []
+            #     avg_mem = []
+            #     for i in range(self.cfg.MODEL.LSTR.GROUPS):
+            #         out = self.enc_modules[0](enc_query, long_memories[i * T:(i + 1) * T],
+            #                                   memory_key_padding_mask=memory_key_padding_mask[:,
+            #                                                           i * T:(i + 1) * T], knn=True,
+            #                                   short_mem=work_memories)
+            #         weight = self.max_polling(out.permute(1, 2, 0)).permute(2, 0, 1)
+            #         out = self.average_pooling(out.permute(1, 2, 0)).permute(2, 0, 1)
+            #         out = out + weight
+            #         long_memories_list.append(out)
+            #     long_memories = torch.cat(long_memories_list)
+            # else:
+            #     long_memories = self.enc_modules[0](enc_queries[0], long_memories,
+            #                                         memory_key_padding_mask=memory_key_padding_mask, knn=True,
+            #                                         short_mem=work_memories)
+
+            self.compressed_long_memories_cache = long_memories
+            # print('aa')
             # Encode long memories
             long_memories = self.enc_modules[0].stream_inference(enc_queries[0], long_memories, pos,
-                                                                 memory_key_padding_mask=memory_key_padding_mask)
+                                                                 memory_key_padding_mask=memory_key_padding_mask,short_mem=work_memories)
             self.compressed_long_memories_cache = long_memories
             for enc_query, enc_module in zip(enc_queries[1:], self.enc_modules[1:]):
                 if enc_query is not None:
@@ -337,30 +393,23 @@ class LSTRStream(LSTR):
                 if enc_query is not None else None
                 for enc_query in self.enc_queries
             ]
-
             # Encode long memories
             for enc_query, enc_module in zip(enc_queries[1:], self.enc_modules[1:]):
                 if enc_query is not None:
                     long_memories = enc_module(enc_query, long_memories)
                 else:
                     long_memories = enc_module(long_memories)
-
+        # print('11111')
         # Concatenate memories
         if self.long_enabled:
             memory = long_memories
 
         if self.work_enabled:
             # Compute work memories
-            work_memories = self.pos_encoding(self.feature_head_work(
-                work_visual_inputs,
-                work_motion_inputs,
-            ).transpose(0, 1), padding=self.long_memory_num_samples)
-
             # Build mask
             mask = tr.generate_square_subsequent_mask(
                 work_memories.shape[0])
             mask = mask.to(work_memories.device)
-
             # Compute output
             if self.long_enabled:
                 output = self.dec_modules(
@@ -373,11 +422,7 @@ class LSTRStream(LSTR):
                     work_memories,
                     src_mask=mask,
                 )
-        indetity = output
-        B = output.shape[1]
-        h0 = self.h0.expand(-1, B, -1).to(output.device)
-        output, _ = self.gru(output.permute(1, 0, 2),h0)
-        output = output.permute(1, 0, 2)
+
         # Compute classification score
         score = self.classifier(output)
 

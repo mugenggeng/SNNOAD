@@ -1,63 +1,60 @@
-import json
+import torch
+from DCLS.construct.modules import  Dcls1d
+
+# Will construct kernels of size 7x7 with 3 elements inside each kernel
+# m = Dcls1d(3, 16, kernel_count=3, dilated_kernel_size=21)
+# input = torch.rand(8, 3, 256)
+# output = m(input)
+# print(output.shape)
+# loss = output.sum()
+# loss.backward()
+# print(output, m.weight.grad, m.P.grad)
 import numpy as np
-import pickle as pkl
-import os
 import matplotlib.pyplot as plt
-# import csv
-if __name__ == '__main__':
-    pred_scores_file_ours = os.getcwd()+'/checkpoints/configs/THUMOS/MAT/mat_long_256_work_8_kinetics_1x/best.pkl'
-    pred_scores_file_mat = os.getcwd()+'/checkpoints/configs/THUMOS/MAT/mat_long_256_work_8_kinetics_1x/epoch-16.pkl'
-    # pred_scores_file_lstr = os.getcwd() + '/checkpoints/configs/THUMOS/MAT/mat_long_256_work_8_kinetics_1x/epoch-15.pkl'
-    pred_scores_ours = pkl.load(open(pred_scores_file_ours, 'rb'))
-    pred_scores_mat = pkl.load(open(pred_scores_file_mat, 'rb'))
-    # pred_scores_lstr = pkl.load(open(pred_scores_file_lstr, 'rb'))
+from scipy.fft import fft, fftshift, ifft
+
+# 假设有一个离散的概率分布，例如概率为 p = [0, 0.2, 0.1, 0.3, 0.4] 对应于离散事件 0, 1, 2, 3, 4
+# p = np.array([0., 0., 1, 1, 0.])
+#
+# # 对离散概率分布进行傅里叶变换
+# P = fft(p)
+#
+# # 对傅里叶变换结果进行平移和缩放
+# # 平移: 将原点移动到频率为0的部分
+# # 缩放: 根据傅里叶变换的性质，需要除以N（样本数）
+# P = fftshift(P) / len(p)
+#
+# # 计算连续分布的频率响应
+# freq = np.linspace(-0.5, 0.5, len(P))
+# # print(P)
+# # 绘制连续分布图
+# plt.plot(freq, np.abs(P))
+# plt.title("Continuous Distribution")
+# plt.xlabel("Frequency")
+# plt.ylabel("Probability Density")
+# plt.show()
+
+import numpy as np
+import math
+
+# 离散分布的概率值
+p = np.array([0.1, 0.2, 0.3, 0.4])
+N = len(p)
 
 
-    video_name = 'video_test_0001508'
-    perframe_gt_targets_our = pred_scores_ours['perframe_gt_targets'][video_name]
+# 计算傅里叶变换的系数
+def fft_to_continuous(p, N):
+    n = np.arange(N)  # 创建一个范围数组
+    freq = np.fft.fftfreq(N) * (2 * math.pi / N)  # 计算频率
+    P = np.fft.fft(p) / N  # 执行傅里叶变换并归一化
 
-    # perframe_gt_targets_mat = pred_scores_mat['perframe_gt_targets']['video_test_0000839']
-    # print(pred_scores_mat['perframe_pred_scores'])
-    # print(pred_scores_mat['perframe_pred_scores'])
-    # print(pred_scores_ours)
-    # print(type(pred_scores_ours['perframe_pred_scores']))
-    perframe_pred_scores_our = pred_scores_ours['perframe_pred_scores'][video_name]
-    perframe_pred_scores_mat = pred_scores_mat['perframe_pred_scores'][video_name]
-    # perframe_pred_scores_lstr = pred_scores_lstr['perframe_pred_scores']['video_test_0000278']
+    return n, freq, np.abs(P)
 
-    # perframe_pred_scores_lstr[:, 0] = 0
-    perframe_pred_scores_our[:, 0] = 0
-    perframe_pred_scores_mat[:, 0] = 0
-    perframe_gt_targets_our[:, 0] = 0
 
-    perframe_pred_scores_our = perframe_pred_scores_our.max(axis=1)
-    # perframe_pred_scores_lstr = perframe_pred_scores_lstr.max(axis=1)
-    perframe_pred_scores_mat = perframe_pred_scores_mat.max(axis=1)
+# 执行傅里叶变换
+n, freq, P = fft_to_continuous(p, N)
 
-    perframe_gt_targets_our = perframe_gt_targets_our.max(axis=1)
-
-    start=0
-    num=200
-    perframe_pred_scores_our =perframe_pred_scores_our[start:num]
-    # perframe_pred_scores_lstr = perframe_pred_scores_lstr[start:num]
-    perframe_pred_scores_mat = perframe_pred_scores_mat[start:num]
-    perframe_gt_targets_our = perframe_gt_targets_our[start:num]
-
-    np.savetxt(video_name+'__data.txt', perframe_pred_scores_our)
-    np.savetxt(video_name + 'no__data.txt', perframe_pred_scores_mat)
-    np.savetxt(video_name+'_GT.txt', perframe_gt_targets_our)
-    # perframe_gt_targets_our = perframe_gt_targets_our[start:num]
-    x = np.linspace(0,len(perframe_pred_scores_our),num=len(perframe_pred_scores_our))
-
-    # fig, ax = plt.subplots()
-    fig,ax = plt.subplots(figsize=(12, 3))
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    ax.plot(x, perframe_pred_scores_our,color='red',label="Ours")
-    # ax.plot(x, perframe_pred_scores_lstr,color='green', label="LSTR")
-    ax.plot(x, perframe_pred_scores_mat,color='blue',label="w/o SGM")
-    plt.plot(x, perframe_gt_targets_our, color='green',label="GT")
-    ax.legend()
-    plt.show()
-    # plt.savefig('./fig.svg')
-    plt.close()
+# 打印结果
+print("n\tfreq\t|P(f)|")
+for i in range(len(n)):
+    print(f"{n[i]}\t{freq[i]}\t{P[i]:.2f}")

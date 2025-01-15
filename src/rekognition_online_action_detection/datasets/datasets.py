@@ -19,11 +19,13 @@ def build_dataset(cfg, phase, tag=''):
 
 
 def build_data_loader(cfg, phase):
+    print(phase)
     data_loader = data.DataLoader(
         dataset=build_dataset(cfg, phase),
         batch_size=cfg.DATA_LOADER.BATCH_SIZE,
         shuffle=True if phase == 'train' else False,
         num_workers=cfg.DATA_LOADER.NUM_WORKERS,
         pin_memory=cfg.DATA_LOADER.PIN_MEMORY,
+        drop_last=True if phase == 'test' else False,
     )
     return data_loader

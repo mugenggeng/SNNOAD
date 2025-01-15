@@ -23,5 +23,13 @@ class PositionalEncoding(nn.Module):
         self.register_buffer('pe', pe)
 
     def forward(self, x, padding=0):
+        # print(x.shape,'1')
+        if x.dim() == 4:
+            T,B,C,N = x.shape
+            x = x.flatten(0,1).permute(2,0,1)
+            # print(x.shape)
+            x = x + self.pe[padding: padding + x.shape[0], :]
+            x = x.permute(2,0,1).reshape(T,B,C,N)
+            return self.dropout(x)
         x = x + self.pe[padding: padding + x.shape[0], :]
         return self.dropout(x)

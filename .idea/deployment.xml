@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" autoUpload="Always" serverName="dx@10.21.22.19:22 (18)" remoteFilesAllowedToDisappearOnAutoupload="false" confirmBeforeUploading="false">
+  <component name="PublishConfigData" autoUpload="Always" serverName="dx@10.21.22.19:22 (28)" remoteFilesAllowedToDisappearOnAutoupload="false" confirmBeforeUploading="false">
     <option name="confirmBeforeUploading" value="false" />
     <serverData>
       <paths name="dx@10.21.22.19:22">
@@ -69,7 +69,7 @@
       <paths name="dx@10.21.22.19:22 (18)">
         <serverdata>
           <mappings>
-            <mapping deploy="/home/dx/data/houlin/Memory-and-Anticipation-Transformer" local="$PROJECT_DIR$" />
+            <mapping local="$PROJECT_DIR$" web="/" />
           </mappings>
         </serverdata>
       </paths>
@@ -136,7 +136,63 @@
           </mappings>
         </serverdata>
       </paths>
+      <paths name="dx@10.21.22.19:22 (27)">
+        <serverdata>
+          <mappings>
+            <mapping local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="dx@10.21.22.19:22 (28)">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/home/dx/data/houlin/RGB_Only" local="$PROJECT_DIR$" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="dx@10.21.22.19:22 (29)">
+        <serverdata>
+          <mappings>
+            <mapping local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
       <paths name="dx@10.21.22.19:22 (3)">
+        <serverdata>
+          <mappings>
+            <mapping local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="dx@10.21.22.19:22 (30)">
+        <serverdata>
+          <mappings>
+            <mapping local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="dx@10.21.22.19:22 (31)">
+        <serverdata>
+          <mappings>
+            <mapping local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="dx@10.21.22.19:22 (32)">
+        <serverdata>
+          <mappings>
+            <mapping local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="dx@10.21.22.19:22 (33)">
+        <serverdata>
+          <mappings>
+            <mapping local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="dx@10.21.22.19:22 (34)">
         <serverdata>
           <mappings>
             <mapping local="$PROJECT_DIR$" web="/" />
@@ -265,7 +321,14 @@
       <paths name="houlin@10.21.22.34:22 (18)">
         <serverdata>
           <mappings>
-            <mapping deploy="/home/houlin/whl/Memory-and-Anticipation-Transformer-main" local="$PROJECT_DIR$" />
+            <mapping local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="houlin@10.21.22.34:22 (19)">
+        <serverdata>
+          <mappings>
+            <mapping local="$PROJECT_DIR$" web="/" />
           </mappings>
         </serverdata>
       </paths>
@@ -391,7 +454,7 @@
       <paths name="wanghongtao@10.21.22.112:22 (2)">
         <serverdata>
           <mappings>
-            <mapping deploy="/home/wanghongtao/project/Memory-and-Anticipation-Transformer" local="$PROJECT_DIR$" />
+            <mapping local="$PROJECT_DIR$" web="/" />
           </mappings>
         </serverdata>
       </paths>
@@ -413,6 +476,13 @@
         <serverdata>
           <mappings>
             <mapping local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="wanghongtao@10.21.22.112:22 (6)">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/home/wanghongtao/project/RGB_only" local="$PROJECT_DIR$" />
           </mappings>
         </serverdata>
       </paths>
@@ -447,7 +517,7 @@
       <paths name="whl@10.21.22.47:22 (2)">
         <serverdata>
           <mappings>
-            <mapping deploy="/home/whl/project/Memory-and-Anticipation-Transformer" local="$PROJECT_DIR$" />
+            <mapping local="$PROJECT_DIR$" web="/" />
           </mappings>
         </serverdata>
       </paths>

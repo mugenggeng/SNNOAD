@@ -18,7 +18,6 @@ def calibrated_average_precision_score(y_true, y_score):
     fp = np.abs(y_true_sorted.astype(float) - 1)
     tps = np.cumsum(tp)
     fps = np.cumsum(fp)
-    # print('aaaa',fps)
     ratio = np.sum(tp == 0) / np.sum(tp)
     cprec = tps / (tps + fps / (ratio + np.finfo(float).eps) + np.finfo(float).eps)
     cap = np.sum(cprec[tp == 1]) / np.sum(tp)

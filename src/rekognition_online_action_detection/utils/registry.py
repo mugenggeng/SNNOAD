@@ -12,6 +12,7 @@ class Registry(dict):
         super(Registry, self).__init__(*args, **kwargs)
 
     def register(self, module_name, module=None):
+        # print(module_name)
         if module is not None:
             _register_generic(self, module_name, module)
             return

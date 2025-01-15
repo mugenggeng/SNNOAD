@@ -12,8 +12,14 @@ import numpy as np
 import pandas as pd
 import pickle as pkl
 import zlib
+from rekognition_online_action_detection.syops import get_model_complexity_info
 from rekognition_online_action_detection.datasets import build_dataset
 from rekognition_online_action_detection.evaluation import compute_result
+# import rekognition_online_action_detection.models.energy_consumption_calculation
+# from rekognition_online_action_detection.models.energy_consumption_calculation.flops_counter import get_model_complexity_info
+from spikingjelly.activation_based import surrogate, neuron, functional
+from spikingjelly.activation_based.model import spiking_resnet
+# from syops import get_model_complexity_info
 
 try:
     from external.rulstm.RULSTM.utils import (get_marginal_indexes, marginalize, softmax,
@@ -27,12 +33,13 @@ except:
 def do_perframe_det_batch_inference(cfg, model, device, logger):
     # Setup model to test mode
     model.eval()
-
+    # print('aaaaaaaaaaaaaaaaaa')
     data_loader = torch.utils.data.DataLoader(
         dataset=build_dataset(cfg, phase='test', tag='BatchInference'),
         batch_size=cfg.DATA_LOADER.BATCH_SIZE,
         num_workers=cfg.DATA_LOADER.NUM_WORKERS * 8,
         pin_memory=cfg.DATA_LOADER.PIN_MEMORY,
+        drop_last=True,
     )
 
     # Collect scores and targets
@@ -40,6 +47,50 @@ def do_perframe_det_batch_inference(cfg, model, device, logger):
     gt_targets = {}
     anticipation_scores = {}
     anticipation_targets = {}
+
+    # input = torch.randn(1, 1, 28, 28, 16)
+    # input_ = torch.randn(1, 1, 28, 28)
+    #
+    # # model = model.cpu()
+    #
+    # ops, params = get_model_complexity_info(model,  [(288,2048),(288,1024)],  data_loader, as_strings=True,
+    #                                         print_per_layer_stat=True, verbose=True)
+    # #
+    # Nmac = ops[2]
+    # Nac = ops[1]
+    # print('{:<30}  {:<8}'.format('Computational complexity ACs:', ops[1]))
+    # print('{:<30}  {:<8}'.format('Computational complexity MACs:', ops[2]))
+    # print('{:<30}  {:<8}'.format('Number of parameters: ', params))
+    # # Nmac = Nmac / 1e9  # G
+    # Nac = Nac / 1e9  # G
+    # E_mac = Nmac * 4.6  # mJ
+    # E_ac = Nac * 0.9  # mJ
+    # E_all = E_mac + E_ac
+    # print(f"Number of operations: {Nmac} G MACs, {Nac} G ACs")
+    # print(f"Energy consumption: {E_all} mJ")
+
+    #
+    # # print(args)
+    # ts1 = time.time()
+    #
+    # # using real data
+    # Nops, Nparams = get_model_complexity_info(model, [(288,2048),(288,1024)], None, as_strings=True,
+    #                                           print_per_layer_stat=True, verbose=True)
+    # # using random input
+    # # Nops, Nparams = get_model_complexity_info(model, (3, 224, 224), dataloader=None, as_strings=True, print_per_layer_stat=True, verbose=True, syops_units='Mac', param_units=' ', output_precision=3)
+    # print("Nops: ", Nops)
+    # print("Nparams: ", Nparams)
+    # t_cost = (time.time() - ts1) / 60
+    # print(f"Time cost: {t_cost} min")
+    #
+    #
+    # ssa_info = {'depth': 8, 'Nheads': 8, 'embSize': 384, 'patchSize': 14, 'Tsteps': 4}  # lifconvbn-8-384
+    # ssa_info = {'depth': 8, 'Nheads': 8, 'embSize': 512, 'patchSize': 14, 'Tsteps': 4}  # lifconvbn-8-512
+    # ssa_info = {'depth': 8, 'Nheads': 12, 'embSize': 768, 'patchSize': 14, 'Tsteps': 4}  # lifconvbn-8-768
+
+    # just run one batch when debugging (Line 79 in engine.py)
+    # if batch_idx >= 1: break
+        # print(ops)
 
     with torch.no_grad():
         start = time.time()
@@ -119,12 +170,38 @@ def do_perframe_det_batch_inference(cfg, model, device, logger):
         'cfg': cfg,
         'perframe_pred_scores': pred_scores,
         'perframe_gt_targets': gt_targets,
-        'anticipation_targets':anticipation_targets,
-        'anticipation_scores': anticipation_scores,
+        # 'anticipation_targets':anticipation_targets,
+        # 'anticipation_scores': anticipation_scores,
     }
+    # cfg_data = {'cfg': cfg}
+    # perframe_pred_scores_d = {'perframe_pred_scores': pred_scores}
+    # perframe_gt_targets_d = {'perframe_gt_targets': gt_targets}
+    # anticipation_targets_d = {'anticipation_targets': anticipation_targets}
+    # anticipation_scores_d = {'anticipation_scores': anticipation_scores}
+    #
     data_compressed = zlib.compress(pkl.dumps(pkl_data))
-    with open(osp.splitext(cfg.MODEL.CHECKPOINT)[0] + '.pkl', 'wb') as f:
+    # cfg_data_compressed = zlib.compress(pkl.dumps(cfg_data))
+    # perframe_pred_scores_d_compressed = zlib.compress(pkl.dumps(perframe_pred_scores_d))
+    # perframe_gt_targets_d_compressed = zlib.compress(pkl.dumps(perframe_gt_targets_d))
+    # anticipation_targets_d_compressed = zlib.compress(pkl.dumps(anticipation_targets_d))
+    # anticipation_scores_d_compressed = zlib.compress(pkl.dumps(anticipation_scores_d))
+    #
+    with open(osp.splitext(cfg.MODEL.CHECKPOINT)[0] + '_result_oad.pkl', 'wb') as f:
         f.write(data_compressed)
+    # with open(osp.splitext(cfg.MODEL.CHECKPOINT)[0] + '_cfg_data.pkl', 'wb') as f:
+    #     f.write(cfg_data_compressed)
+    #
+    # with open(osp.splitext(cfg.MODEL.CHECKPOINT)[0] + 'perframe_pred_scores_d_compressed.pkl', 'wb') as f:
+    #     f.write(perframe_pred_scores_d_compressed)
+    #
+    # with open(osp.splitext(cfg.MODEL.CHECKPOINT)[0] + '_perframe_gt_targets_d_compressed.pkl', 'wb') as f:
+    #     f.write(perframe_gt_targets_d_compressed)
+    #
+    # with open(osp.splitext(cfg.MODEL.CHECKPOINT)[0] + '_anticipation_targets_d_compressed.pkl', 'wb') as f:
+    #     f.write(anticipation_targets_d_compressed)
+    #
+    # with open(osp.splitext(cfg.MODEL.CHECKPOINT)[0] + '_anticipation_scores_d_compressed.pkl', 'wb') as f:
+    #     f.write(anticipation_scores_d_compressed)
     # pkl.dump({
     #     'cfg': cfg,
     #     'perframe_pred_scores': pred_scores,
