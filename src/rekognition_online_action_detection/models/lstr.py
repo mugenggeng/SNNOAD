@@ -1300,7 +1300,7 @@ class LSTR(nn.Module):
                 )
             self.pos_encoding = tr.PositionalEncoding(embed_dim[-1], self.dropout)
             self.final_query = nn.Embedding(cfg.MODEL.LSTR.FUT_MODULE[0][0], embed_dim[-1])
-            self.gen_query = nn.Embedding(param[0],  embed_dim[-1])
+            # self.gen_query = nn.Embedding(param[0],  embed_dim[-1])
 
         self.cci_time = cfg.MODEL.LSTR.CCI_TIMES
         self.classifier = nn.Linear(embed_dim[-1]*2, self.num_classes)
@@ -1338,8 +1338,8 @@ class LSTR(nn.Module):
             # print(memory.shape,output.shape)
             # his_memory = torch.cat([memory, output,fut],dim=-1)
             # print(his_memory.shape,'his_memory.shape')
-            # dec_query = self.final_query.weight.unsqueeze(1).unsqueeze(0).repeat(self.T, 1, his_memory.shape[1], 1).permute(0,2,3,1)
-            dec_query = self.gen_query.weight.unsqueeze(1).unsqueeze(0).repeat(self.T, 1, his_memory.shape[1], 1).permute(0,2,3,1)
+            dec_query = self.final_query.weight.unsqueeze(1).unsqueeze(0).repeat(self.T, 1, his_memory.shape[1], 1).permute(0,2,3,1)
+            # dec_query = self.gen_query.weight.unsqueeze(1).unsqueeze(0).repeat(self.T, 1, his_memory.shape[1], 1).permute(0,2,3,1)
             # print(dec_query.shape,his_memory.shape)
             future = self.gen_layer(dec_query, his_memory)
             # future += fut
@@ -1572,9 +1572,9 @@ class LSTR(nn.Module):
             # fut_scores.append(fut_score_motion)
             work_score = self.classifier(work.permute(0, 1, 3, 2)).mean(0)
             # print(fut.shape)
-            T,B,C,N = fut.shape
+            # T,B,C,N = fut.shape
 
-            fut = F.interpolate(fut.reshape(-1,C,N), size=self.future_num_samples).reshape(T,B,C,-1)
+            # fut = F.interpolate(fut.reshape(-1,C,N), size=self.future_num_samples).reshape(T,B,C,-1)
             # print(fut.shape)
             fut_score = self.classifier(fut.permute(0, 1, 3, 2)).mean(0)
             work_scores.append(work_score)
