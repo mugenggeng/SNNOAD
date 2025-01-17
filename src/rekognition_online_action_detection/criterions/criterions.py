@@ -16,6 +16,35 @@ from rekognition_online_action_detection.utils.registry import Registry
 
 CRITERIONS = Registry()
 
+# 兼容geomloss提供的'euclidean'
+# 注意：geomloss要求cost func计算两个batch的距离，也即接受(B, N, D)
+# def cost_func(a, b, p=2, metric='cosine'):
+#     """ a, b in shape: (B, N, D) or (N, D)
+#     """
+#     assert type(a)==torch.Tensor and type(b)==torch.Tensor, 'inputs should be torch.Tensor'
+#     if metric=='euclidean' and p==1:
+#         return geomloss.utils.distances(a, b)
+#     elif metric=='euclidean' and p==2:
+#         return geomloss.utils.squared_distances(a, b)
+#     else:
+#         if a.dim() == 3:
+#             x_norm = a / a.norm(dim=2)[:, :, None]
+#             y_norm = b / b.norm(dim=2)[:, :, None]
+#             M = 1 - torch.bmm(x_norm, y_norm.transpose(-1, -2))
+#         elif a.dim() == 2:
+#             x_norm = a / a.norm(dim=1)[:, None]
+#             y_norm = b / b.norm(dim=1)[:, None]
+#             M = 1 - torch.mm(x_norm, y_norm.transpose(0, 1))
+#         M = pow(M, p)
+#         return M
+#
+# metric = 'cosine'
+# OTLoss = geomloss.SamplesLoss(
+#     loss='sinkhorn', p=p,
+#     cost=lambda a, b: cost_func(a, b, p=p, metric=metric),
+#     blur=entreg**(1/p), backend='tensorized')
+# pW = OTLoss(a, b)
+
 class LaSNNLoss(nn.Module):
     """PyTorch version of `Masked Generative Distillation`
 
