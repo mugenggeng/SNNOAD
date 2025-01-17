@@ -16,7 +16,7 @@ from torch.cuda.amp import autocast, GradScaler
 from thop import profile
 from rekognition_online_action_detection.evaluation import compute_result
 from torch.cuda.amp import GradScaler, autocast
-
+import geomloss
 import sys
 # sys.path.append('../../../../external/')
 # sys.path.append("/home/wanghongtao/project/Memory-and-Anticipation-Transformer/")
@@ -62,7 +62,37 @@ def get_logits_loss(fc_t, fc_s, label, temp, num_classes=1000):
     soft_loss = (temp ** 2) * torch.mean(softmax_loss)
 
     return soft_loss
-
+# 兼容geomloss提供的'euclidean'
+# 注意：geomloss要求cost func计算两个batch的距离，也即接受(B, N, D)
+def cost_func(a, b, p=2, metric='cosine'):
+    """ a, b in shape: (B, N, D) or (N, D)
+    """
+    assert type(a)==torch.Tensor and type(b)==torch.Tensor, 'inputs should be torch.Tensor'
+    if metric=='euclidean' and p==1:
+        return geomloss.utils.distances(a, b)
+    elif metric=='euclidean' and p==2:
+        return geomloss.utils.squared_distances(a, b)
+    else:
+        if a.dim() == 3:
+            x_norm = a / a.norm(dim=2)[:, :, None]
+            y_norm = b / b.norm(dim=2)[:, :, None]
+            M = 1 - torch.bmm(x_norm, y_norm.transpose(-1, -2))
+        elif a.dim() == 2:
+            x_norm = a / a.norm(dim=1)[:, None]
+            y_norm = b / b.norm(dim=1)[:, None]
+            M = 1 - torch.mm(x_norm, y_norm.transpose(0, 1))
+        M = pow(M, p)
+        return M
+def Geomloss(pred,target):
+    metric = 'cosine'
+    entreg = .1
+    p = 2
+    OTLoss = geomloss.SamplesLoss(
+        loss='sinkhorn', p=p,
+        cost=lambda pred, target: cost_func(pred, target, p=p, metric=metric),
+        blur=entreg**(1/p), backend='tensorized')
+    # pW = OTLoss(a, b)
+    return OTLoss(pred, target)
 def do_perframe_det_train(cfg,
                           data_loaders,
                           model,
@@ -139,6 +169,8 @@ def do_perframe_det_train(cfg,
                             _,feature_TW,feature_TF = teach_model(*[x.to(device) for x in data[:-1]],epoch=epoch)
                             # print(feature_SW[0].shape,feature_TW[0].shape)
                             brd_loss_w = brdloss(feature_SW[0], feature_TW[0].permute(1,2,0))
+                            geomloss = Geomloss(feature_SW[0], feature_TW[0].permute(1,2,0))
+
                             brd_loss_f = brdloss(feature_SF[0], feature_TF[0].permute(1,2,0))
                             # print(brd_loss_w,brd_loss_f)
                             # brd_loss_l = brdloss(feature_S[0], feature_T[0].permute(0,2,1))
@@ -154,7 +186,7 @@ def do_perframe_det_train(cfg,
                             # loss_dist_W = brd_loss_w + loss_dist_logits_W * 0.5
                             # loss_dist_F = brd_loss_f + loss_dist_logits_F * 0.5
                             # loss_TW = loss_dist_F+loss_dist_W
-                            loss_TW = brd_loss_w + brd_loss_f
+                            loss_TW = brd_loss_w + brd_loss_f + geomloss
                             # print(loss_TW,loss_dist_F,loss_dist_W,'loss_TW,loss_dist_T,loss_dist_W')
                             # print(brd_loss_w,loss_dist_logits_W,'brd_loss_w,loss_dist_logits_')
                             # print(brd_loss_f,loss_dist_logits_F,'brd_loss_f,loss_dist_logits_F')
