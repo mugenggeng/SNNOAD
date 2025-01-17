@@ -12,6 +12,11 @@ def build_optimizer(cfg, model):
             [{'params': model.parameters(), 'initial_lr': cfg.SOLVER.BASE_LR}],
             lr=cfg.SOLVER.BASE_LR, weight_decay=cfg.SOLVER.WEIGHT_DECAY, momentum=cfg.SOLVER.MOMENTUM,
         )
+    elif cfg.SOLVER.OPTIMIZER == 'RMSprop':
+        optimizer = optim.RMSprop(
+            [{'params': model.parameters(), 'initial_lr': cfg.SOLVER.BASE_LR}],
+            lr=cfg.SOLVER.BASE_LR, alpha=0.9, eps=1e-6
+        )
     elif cfg.SOLVER.OPTIMIZER == 'adam':
         optimizer = optim.Adam(
             [{'params': model.parameters(), 'initial_lr': cfg.SOLVER.BASE_LR}],
