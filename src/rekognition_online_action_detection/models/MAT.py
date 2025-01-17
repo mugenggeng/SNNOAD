@@ -287,11 +287,11 @@ class MAT(nn.Module):
                         fut_noun_score = self.classifier_noun(fut).transpose(0, 1)
                         fut_verb_score = self.classifier_verb(fut).transpose(0, 1)
             # print(work_scores[0].shape, fut_scores[0].shape)
-            feature_TW.append(works[-1])
-            feature_TW.append(work_scores[-1])
+            feature_TW.append(torch.stack(works).mean(0))
+            feature_TW.append(torch.stack(work_scores).mean(0))
 
-            feature_TF.append(futs[-1])
-            feature_TF.append(fut_scores[-1])
+            feature_TF.append(torch.stack(futs).mean(0))
+            feature_TF.append(torch.stack(fut_scores).mean(0))
             return (work_scores, fut_scores),feature_TW, feature_TF if self.cfg.DATA.DATA_NAME != 'EK100' else (
             work_scores, fut_scores, noun_score, fut_noun_score, verb_score, fut_verb_score)
 
