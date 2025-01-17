@@ -4,8 +4,8 @@ import sys
 import os
 # os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 # print(os.getcwd()+'src/')
-# sys.path.append(os.getcwd()+'/src/')
-sys.path.append('/home/dx/data/houlin/RGB_Only/src/')
+sys.path.append(os.getcwd()+'/src/')
+# sys.path.append('/home/dx/data/houlin/RGB_Only/src/')
 from rekognition_online_action_detection.utils.parser import load_cfg
 from rekognition_online_action_detection.utils.env import setup_environment
 from rekognition_online_action_detection.utils.checkpointer import setup_checkpointer
