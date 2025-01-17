@@ -143,17 +143,18 @@ def do_perframe_det_train(cfg,
                             # print(brd_loss_w,brd_loss_f)
                             # brd_loss_l = brdloss(feature_S[0], feature_T[0].permute(0,2,1))
                             # brd_loss = brd_loss_w + brd_loss_f
-                            distill_weight = 1.
-                            temp = 2.
-                            loss_dist_logits_W = distill_weight * get_logits_loss(feature_TW[-1], feature_SW[-1], det_target,
-                                                                                temp, cfg.DATA.NUM_CLASSES)
-
-                            loss_dist_logits_F = distill_weight * get_logits_loss(feature_TF[-1], feature_SF[-1],
-                                                                                  fut_target,
-                                                                                  temp, cfg.DATA.NUM_CLASSES)
-                            loss_dist_W = brd_loss_w + loss_dist_logits_W * 0.5
-                            loss_dist_F = brd_loss_f + loss_dist_logits_F * 0.5
-                            loss_TW = loss_dist_F+loss_dist_W
+                            # distill_weight = 1.
+                            # temp = 2.
+                            # loss_dist_logits_W = distill_weight * get_logits_loss(feature_TW[-1], feature_SW[-1], det_target,
+                            #                                                     temp, cfg.DATA.NUM_CLASSES)
+                            #
+                            # loss_dist_logits_F = distill_weight * get_logits_loss(feature_TF[-1], feature_SF[-1],
+                            #                                                       fut_target,
+                            #                                                       temp, cfg.DATA.NUM_CLASSES)
+                            # loss_dist_W = brd_loss_w + loss_dist_logits_W * 0.5
+                            # loss_dist_F = brd_loss_f + loss_dist_logits_F * 0.5
+                            # loss_TW = loss_dist_F+loss_dist_W
+                            loss_TW = brd_loss_w + brd_loss_f
                             # print(loss_TW,loss_dist_F,loss_dist_W,'loss_TW,loss_dist_T,loss_dist_W')
                             # print(brd_loss_w,loss_dist_logits_W,'brd_loss_w,loss_dist_logits_')
                             # print(brd_loss_f,loss_dist_logits_F,'brd_loss_f,loss_dist_logits_F')
