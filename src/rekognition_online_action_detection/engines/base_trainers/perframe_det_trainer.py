@@ -92,7 +92,7 @@ def Geomloss(pred,target):
         cost=lambda pred, target: cost_func(pred, target, p=p, metric=metric),
         blur=entreg**(1/p), backend='tensorized')
     # pW = OTLoss(a, b)
-    return OTLoss(pred, target)
+    return OTLoss(pred, target).sum(0)
 def do_perframe_det_train(cfg,
                           data_loaders,
                           model,
@@ -169,9 +169,11 @@ def do_perframe_det_train(cfg,
                             _,feature_TW,feature_TF = teach_model(*[x.to(device) for x in data[:-1]],epoch=epoch)
                             # print(feature_SW[0].shape,feature_TW[0].shape)
                             brd_loss_w = brdloss(feature_SW[0], feature_TW[0].permute(1,2,0))
-                            geomloss = Geomloss(feature_SW[0], feature_TW[0].permute(1,2,0))
+                            geomloss_w = Geomloss(feature_SW[0], feature_TW[0].permute(1,2,0))
 
                             brd_loss_f = brdloss(feature_SF[0], feature_TF[0].permute(1,2,0))
+                            geomloss_f = Geomloss(feature_SF[0], feature_TF[0].permute(1,2,0))
+
                             # print(brd_loss_w,brd_loss_f)
                             # brd_loss_l = brdloss(feature_S[0], feature_T[0].permute(0,2,1))
                             # brd_loss = brd_loss_w + brd_loss_f
@@ -186,7 +188,8 @@ def do_perframe_det_train(cfg,
                             # loss_dist_W = brd_loss_w + loss_dist_logits_W * 0.5
                             # loss_dist_F = brd_loss_f + loss_dist_logits_F * 0.5
                             # loss_TW = loss_dist_F+loss_dist_W
-                            loss_TW = brd_loss_w + brd_loss_f + geomloss
+                            # loss_TW = brd_loss_w + brd_loss_f + geomloss
+                            loss_TW = geomloss_w + geomloss_f
                             # print(loss_TW,loss_dist_F,loss_dist_W,'loss_TW,loss_dist_T,loss_dist_W')
                             # print(brd_loss_w,loss_dist_logits_W,'brd_loss_w,loss_dist_logits_')
                             # print(brd_loss_f,loss_dist_logits_F,'brd_loss_f,loss_dist_logits_F')
