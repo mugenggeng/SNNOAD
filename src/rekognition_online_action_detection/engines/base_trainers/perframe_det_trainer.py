@@ -189,7 +189,8 @@ def do_perframe_det_train(cfg,
                             # loss_dist_F = brd_loss_f + loss_dist_logits_F * 0.5
                             # loss_TW = loss_dist_F+loss_dist_W
                             # loss_TW = brd_loss_w + brd_loss_f + geomloss
-                            loss_TW = loss_dist_logits_W  + loss_dist_logits_F
+                            loss_TW = loss_dist_logits_W  + loss_dist_logits_F + geomloss_w + geomloss_f
+                            print(loss_dist_logits_W  + loss_dist_logits_F,geomloss_w + geomloss_f)
                             # print(loss_TW,loss_dist_F,loss_dist_W,'loss_TW,loss_dist_T,loss_dist_W')
                             # print(brd_loss_w,loss_dist_logits_W,'brd_loss_w,loss_dist_logits_')
                             # print(brd_loss_f,loss_dist_logits_F,'brd_loss_f,loss_dist_logits_F')
