@@ -1127,7 +1127,7 @@ def fft_to_continuous(p, N):
 class LSTR(nn.Module):
 
     def __init__(self, cfg,
-                 embed_dim=[128,256, 512, 1024],
+                 embed_dim=[64,128, 256, 512],
                  embed_dim_w=[256, 512],
                  num_heads=4,
                  mlp_ratios=1,
