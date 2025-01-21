@@ -1303,7 +1303,7 @@ class LSTR(nn.Module):
             # self.gen_query = nn.Embedding(param[0],  embed_dim[-1])
 
         self.cci_time = cfg.MODEL.LSTR.CCI_TIMES
-        self.classifier = nn.Linear(embed_dim[-1]*2, self.num_classes)
+        self.classifier = nn.Linear(embed_dim[-1], self.num_classes)
         if self.cfg.DATA.DATA_NAME == 'EK100':
             self.classifier_verb = nn.Linear(self.d_model, 98)
             self.classifier_noun = nn.Linear(self.d_model, 301)
@@ -1348,16 +1348,16 @@ class LSTR(nn.Module):
             # print(output.shape,future.shape)
             return output, future
 
-    def forward_features(self, x,x_2):
+    def forward_features(self, x,x_2=None):
         works, futs = [],[]
 
         x = self.downsample1_1(x)
 
         for blk in self.ConvBlock1_1:
             x = blk(x)
-        x_2 = self.downsample1_1(x_2)
-        for blk in self.ConvBlock1_1:
-            x_2 = blk(x_2)
+        # x_2 = self.downsample1_1(x_2)
+        # for blk in self.ConvBlock1_1:
+        #     x_2 = blk(x_2)
 
         # x = self.fusion1_1(x, x_2)
 
@@ -1365,18 +1365,18 @@ class LSTR(nn.Module):
         x = self.downsample1_2(x)
         for blk in self.ConvBlock1_2:
             x = blk(x)
-        x_2 = self.downsample1_2(x_2)
-        for blk in self.ConvBlock1_2:
-            x_2 = blk(x_2)
+        # x_2 = self.downsample1_2(x_2)
+        # for blk in self.ConvBlock1_2:
+        #     x_2 = blk(x_2)
 
         # x = self.fusion1_2(x, x_2)
 
         x = self.downsample2(x)
         for blk in self.ConvBlock2_1:
             x = blk(x)
-        x_2 = self.downsample2(x_2)
-        for blk in self.ConvBlock2_1:
-            x_2 = blk(x_2)
+        # x_2 = self.downsample2(x_2)
+        # for blk in self.ConvBlock2_1:
+        #     x_2 = blk(x_2)
 
 
         # x = self.fusion2_1(x, x_2)
@@ -1384,18 +1384,18 @@ class LSTR(nn.Module):
         x = self.downsample3(x)
         for blk in self.ConvBlock3_1:
             x = blk(x)
-        x_2 = self.downsample3(x_2)
-        for blk in self.ConvBlock3_1:
-            x_2 = blk(x_2)
+        # x_2 = self.downsample3(x_2)
+        # for blk in self.ConvBlock3_1:
+        #     x_2 = blk(x_2)
 
         # x = self.fusion3_1(x, x_2)
 
         x = self.downsample4(x)
         for blk in self.ConvBlock4_1:
             x = blk(x)
-        x_2 = self.downsample4(x_2)
-        for blk in self.ConvBlock4_1:
-            x_2 = blk(x_2)
+        # x_2 = self.downsample4(x_2)
+        # for blk in self.ConvBlock4_1:
+        #     x_2 = blk(x_2)
         # print(x)
         # print('111111111')
         # print(x_2)
@@ -1479,8 +1479,8 @@ class LSTR(nn.Module):
 
         if x_visual.dim() != 4:
             x_visual = x_visual.unsqueeze(0).repeat(self.T, 1, 1, 1)
-        if x_motion.dim() != 4:
-            x_motion = x_motion.unsqueeze(0).repeat(self.T, 1, 1, 1)
+        # if x_motion.dim() != 4:
+        #     x_motion = x_motion.unsqueeze(0).repeat(self.T, 1, 1, 1)
 
         assert x_visual.dim() == x_motion.dim() == 4
         if self.anticipation_num_samples > 0:
@@ -1494,12 +1494,12 @@ class LSTR(nn.Module):
             anticipation_queries = anticipation_queries.unsqueeze(0).repeat(self.T,1,1,1).permute(0,2,3,1)
             # print(anticipation_queries.shape)
             work_memories_visual = torch.cat((work_memories_visual, anticipation_queries), dim=-1)
-            work_memories_motion = torch.cat((work_memories_motion, anticipation_queries), dim=-1)
+            # work_memories_motion = torch.cat((work_memories_motion, anticipation_queries), dim=-1)
 
             if work_memories_visual.dim() != 4:
                 work_memories_visual = work_memories_visual.unsqueeze(0).repeat(self.T, 1, 1, 1)
-            if work_memories_motion.dim() != 4:
-                work_memories_motion = work_memories_motion.unsqueeze(0).repeat(self.T, 1, 1, 1)
+            # if work_memories_motion.dim() != 4:
+            #     work_memories_motion = work_memories_motion.unsqueeze(0).repeat(self.T, 1, 1, 1)
 
 
         else:
@@ -1521,7 +1521,7 @@ class LSTR(nn.Module):
         # print(x.shape,w.shape)
         work_visual, fut_visual = self.cci(x, w)
 
-        work_motion, fut_motion = self.cci(x_2, w_2)
+        # work_motion, fut_motion = self.cci(x_2, w_2)
 
         # work_visual = x
         # work_motion = x_2
@@ -1535,8 +1535,10 @@ class LSTR(nn.Module):
 
         # work = self.fusion_work(work_visual,work_motion)
         # fut = self.fusion_fut(fut_visual,fut_motion)
-        work = torch.cat([work_visual,work_motion], dim=2)
-        fut = torch.cat([fut_visual,fut_motion],dim=2)
+        # work = torch.cat([work_visual,work_motion], dim=2)
+        # fut = torch.cat([fut_visual,fut_motion],dim=2)
+        work = work_visual
+        fut = fut_visual
         # T_w,B_w,C_w,N_w = work.shape
         # work_f = work.reshape(-1,N_w)
         # n, _, work_f = fft_to_continuous(work_f, T_w*B_w*C_w)

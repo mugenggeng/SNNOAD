@@ -100,16 +100,22 @@ class BaseFeatureHead(nn.Module):
             if self.with_motion and self.with_visual:
                 self.input_linear = nn.Identity()
         self.num_layers = 1
-        self.gru = nn.GRU(self.d_model, self.d_model, self.num_layers, batch_first=True)
-        self.gru1 = nn.GRU(self.d_model, self.d_model, self.num_layers, batch_first=True)
+        if self.with_visual and self.with_motion:
+            self.gru = nn.GRU(self.d_model, self.d_model, self.num_layers, batch_first=True)
+            self.gru1 = nn.GRU(self.d_model, self.d_model, self.num_layers, batch_first=True)
+        else:
+            self.gru = nn.GRU(self.d_model, self.d_model, self.num_layers, batch_first=True)
         # self.gru2 = nn.GRU(self./d_model, self.d_model, self.num_layers, batch_first=True)
         # self.h0 = torch.zeros(self.num_layers, 1, self.d_model)
         # self.h1 = torch.zeros(self.num_layers, 1, self.d_model)
 
     def forward(self, visual_input, motion_input):
         if not hasattr(self, '_flattened'):
-            self.gru.flatten_parameters()
-            self.gru1.flatten_parameters()
+            if self.with_visual and self.with_motion:
+                self.gru.flatten_parameters()
+                self.gru1.flatten_parameters()
+            else:
+                self.gru.flatten_parameters()
             # self.gru2.flatten_parameters()
             setattr(self, '_flattened', True)
 
@@ -134,6 +140,10 @@ class BaseFeatureHead(nn.Module):
         elif self.with_visual:
             # print(visual_input.shape)
             fusion_input = self.visual_linear(visual_input)
+            fusion_input = self.gru(fusion_input.flatten(0,1))
+            fusion_input = fusion_input.reshape(T,B,N,-1)
+            return fusion_input,None
+
         elif self.with_motion:
             fusion_input = self.motion_linear(motion_input)
         # print(fusion_input.shape)
