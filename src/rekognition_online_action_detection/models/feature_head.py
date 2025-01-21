@@ -140,7 +140,7 @@ class BaseFeatureHead(nn.Module):
         elif self.with_visual:
             # print(visual_input.shape)
             fusion_input = self.visual_linear(visual_input)
-            fusion_input = self.gru(fusion_input.flatten(0,1))
+            fusion_input,_ = self.gru(fusion_input.flatten(0,1))
             fusion_input = fusion_input.reshape(T,B,N,-1)
             return fusion_input,None
 
