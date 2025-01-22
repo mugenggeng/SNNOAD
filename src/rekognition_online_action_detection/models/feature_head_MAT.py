@@ -31,12 +31,13 @@ class BaseFeatureHead(nn.Module):
     def __init__(self, cfg):
         super(BaseFeatureHead, self).__init__()
         cfg.INPUT.MODALITY = 'twostream'
-        if cfg.INPUT.MODALITY in ['visual', 'motion', 'twostream']:
-            self.with_visual = 'motion' not in cfg.INPUT.MODALITY
-            self.with_motion = 'visual' not in cfg.INPUT.MODALITY
-        else:
-            raise RuntimeError('Unknown modality of {}'.format(cfg.INPUT.MODALITY))
-
+        # if cfg.INPUT.MODALITY in ['visual', 'motion', 'twostream']:
+        #     self.with_visual = 'motion' not in cfg.INPUT.MODALITY
+        #     self.with_motion = 'visual' not in cfg.INPUT.MODALITY
+        # else:
+        #     raise RuntimeError('Unknown modality of {}'.format(cfg.INPUT.MODALITY))
+        self.with_visual = True
+        self.with_motion = True
         if self.with_visual and self.with_motion:
             visual_size = FEATURE_SIZES[cfg.INPUT.VISUAL_FEATURE]
             motion_size = FEATURE_SIZES[cfg.INPUT.MOTION_FEATURE]
