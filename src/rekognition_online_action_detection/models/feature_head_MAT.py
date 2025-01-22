@@ -48,7 +48,7 @@ class BaseFeatureHead(nn.Module):
             fusion_size = FEATURE_SIZES[cfg.INPUT.MOTION_FEATURE]
             motion_size = FEATURE_SIZES[cfg.INPUT.MOTION_FEATURE]
 
-        self.d_model = fusion_size
+        self.d_model = 512
 
         if cfg.MODEL.FEATURE_HEAD.LINEAR_ENABLED:
             if cfg.MODEL.FEATURE_HEAD.LINEAR_OUT_FEATURES != -1:
