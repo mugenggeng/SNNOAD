@@ -169,7 +169,7 @@ class MAT(nn.Module):
         # print(self.long_memory_num_samples)
         feature_TW = list()
         feature_TF = list()
-        print(self.d_model)
+        # print(self.d_model)
         if self.long_enabled:
             # Compute long memories
             the_long_memories = self.feature_head_long(
