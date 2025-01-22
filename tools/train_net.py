@@ -39,7 +39,7 @@ def main(cfg):
     # print('333333333')
     model = build_model(cfg,device=device)
 
-    cfg.MODEL.CHECKPOINT = './MatCheckpoints/epoch_visual.pth'
+    cfg.MODEL.CHECKPOINT = './MatCheckpoints/MAT_two.pth'
     checkpointer1 = setup_checkpointer(cfg, phase='test')
     teach_model = build_model(cfg,name='MAT',device=device)
     checkpointer1.load(teach_model)
