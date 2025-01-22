@@ -30,7 +30,7 @@ class BaseFeatureHead(nn.Module):
 
     def __init__(self, cfg):
         super(BaseFeatureHead, self).__init__()
-
+        cfg.INPUT.MODALITY = 'twostream'
         if cfg.INPUT.MODALITY in ['visual', 'motion', 'twostream']:
             self.with_visual = 'motion' not in cfg.INPUT.MODALITY
             self.with_motion = 'visual' not in cfg.INPUT.MODALITY
