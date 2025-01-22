@@ -5,7 +5,7 @@ DATA:
 #  DATA_INFO: '/data1/houlin/MATData/data/data_info.json'
 #  DATA_ROOT: '/data1/houlin/MATData/data/thumos14'mamba_ssm
 INPUT:
-  MODALITY: 'visual'
+  MODALITY: 'twostream'
 #  MODALITY: 'twostream'
   VISUAL_FEATURE: 'rgb_kinetics_resnet50'
   MOTION_FEATURE: 'flow_kinetics_bninception'
