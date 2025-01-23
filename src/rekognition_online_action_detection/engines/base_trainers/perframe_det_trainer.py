@@ -213,6 +213,7 @@ def do_perframe_det_train(cfg,
                             # print(det_target.shape,det_score.shape)
                             # print(i)
                             if i == 0:
+                                print(criterion['MCE'](det_score, det_target),0.8 * criterion['MCE'](det_score, det_target),'0.8*,(det_score, det_target)')
                                 det_loss = 0.8 * criterion['MCE'](det_score, det_target)
                             else:
                                 det_loss += (0.8*i - 0.6) * criterion['MCE'](det_score, det_target)
