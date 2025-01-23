@@ -213,9 +213,9 @@ def do_perframe_det_train(cfg,
                             # print(det_target.shape,det_score.shape)
                             # print(i)
                             if i == 0:
-                                print(criterion['MCE'](det_score, det_target),0.8 * criterion['MCE'](det_score, det_target),'0.8*,(det_score, det_target)')
-                                det_loss = 0.8 * criterion['MCE'](det_score, det_target)
+                                det_loss = 0.2 * criterion['MCE'](det_score, det_target)
                             else:
+
                                 det_loss += (0.8*i - 0.6) * criterion['MCE'](det_score, det_target)
                         # det_loss = det_loss/det_scores.shape[0]
                         det_losses[phase] += det_loss.item() * batch_size
@@ -223,8 +223,10 @@ def do_perframe_det_train(cfg,
                         for i, fut_score in enumerate(fut_scores):
                             fut_score = fut_score.reshape(-1, cfg.DATA.NUM_CLASSES)
                             if i == 0:
-                                fut_loss = 0.2 * criterion['MCE'](fut_score, fut_target)
+
+                                fut_loss = 0.1 * criterion['MCE'](fut_score, fut_target)
                             else:
+
                                 fut_loss += 0.1 * criterion['MCE'](fut_score, fut_target)
                             # fut_loss = 0.1 * criterion['MCE'](fut_score, fut_target)
                         # fut_loss = fut_loss / fut_scores.shape[0]
