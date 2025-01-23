@@ -234,9 +234,10 @@ def do_perframe_det_train(cfg,
                         fut_losses[phase] += fut_loss.item() * batch_size
                         fut_log[phase] += fut_loss
                         det_loss += fut_loss
-                    if training:
+                    # if training:
                         # print(brd_loss)
-                        det_loss += loss_TW
+                    print(det_loss,loss_TW)
+                    det_loss += loss_TW
                         # print(det_loss)
                     # Output log for current batch
                     pbar.set_postfix({
