@@ -1130,7 +1130,7 @@ class LSTR(nn.Module):
                  embed_dim=[64,128, 256, 512],
                  embed_dim_w=[256, 512],
                  num_heads=4,
-                 mlp_ratios=1,
+                 mlp_ratios=4,
                  depths=1,
                  T=4,
                  times=4,
