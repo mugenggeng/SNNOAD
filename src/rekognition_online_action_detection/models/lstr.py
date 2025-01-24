@@ -1494,12 +1494,12 @@ class LSTR(nn.Module):
             anticipation_queries = anticipation_queries.unsqueeze(0).repeat(self.T,1,1,1).permute(0,2,3,1)
             # print(anticipation_queries.shape)
             work_memories_visual = torch.cat((work_memories_visual, anticipation_queries), dim=-1)
-            # work_memories_motion = torch.cat((work_memories_motion, anticipation_queries), dim=-1)
+            work_memories_motion = torch.cat((work_memories_motion, anticipation_queries), dim=-1)
 
             if work_memories_visual.dim() != 4:
                 work_memories_visual = work_memories_visual.unsqueeze(0).repeat(self.T, 1, 1, 1)
-            # if work_memories_motion.dim() != 4:
-            #     work_memories_motion = work_memories_motion.unsqueeze(0).repeat(self.T, 1, 1, 1)
+            if work_memories_motion.dim() != 4:
+                work_memories_motion = work_memories_motion.unsqueeze(0).repeat(self.T, 1, 1, 1)
 
 
         else:
@@ -1519,6 +1519,7 @@ class LSTR(nn.Module):
         # w = F.interpolate(w, size=40,mode='linear').reshape(T,B,C,-1)
         # w_2 = F.interpolate(w_2, size=40, mode='linear').reshape(T,B,C,-1)
         # print(x.shape,w.shape)
+        # print(x.shape, w.shape,x_2.shape,w_2.shape)
         work_visual, fut_visual = self.cci(x, w)
 
         work_motion, fut_motion = self.cci(x_2, w_2)
