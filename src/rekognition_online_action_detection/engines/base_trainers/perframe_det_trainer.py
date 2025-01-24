@@ -190,7 +190,7 @@ def do_perframe_det_train(cfg,
                             # loss_TW = loss_dist_F+loss_dist_W
                             # loss_TW = brd_loss_w + brd_loss_f + geomloss
                             # print(loss_dist_logits_W ,loss_dist_logits_F , geomloss_w , geomloss_f)
-                            loss_TW = loss_dist_logits_W * 0.3 + loss_dist_logits_F * 0.3 + geomloss_w + geomloss_f
+                            loss_TW = loss_dist_logits_W + loss_dist_logits_F + geomloss_w + geomloss_f
                             # print(loss_dist_logits_W  + loss_dist_logits_F,geomloss_w + geomloss_f)
                             # print(loss_TW,loss_dist_F,loss_dist_W,'loss_TW,loss_dist_T,loss_dist_W')
                             # print(brd_loss_w,loss_dist_logits_W,'brd_loss_w,loss_dist_logits_')
@@ -236,7 +236,7 @@ def do_perframe_det_train(cfg,
                         det_loss += fut_loss
                     # if training:
                         # print(brd_loss)
-                    print(det_loss,loss_TW)
+                    # print(det_loss,loss_TW)
                     det_loss += loss_TW
                         # print(det_loss)
                     # Output log for current batch
