@@ -250,8 +250,8 @@ def do_perframe_det_train(cfg,
 
                         # det_loss.backward()
                         # optimizer.step()
-                        # ema.update()
-                        # scheduler.step()
+                        ema.update()
+                        scheduler.step()
                         brdloss(
                             det_loss,
                             optimizer,
