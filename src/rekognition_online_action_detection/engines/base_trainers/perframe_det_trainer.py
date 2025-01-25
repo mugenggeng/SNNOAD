@@ -246,21 +246,20 @@ def do_perframe_det_train(cfg,
                     })
                     # print(det_loss,batch_idx,'det_loss')
                     if training:
-                        optimizer.zero_grad()
+                        # optimizer.zero_grad()
 
-                        det_loss.backward()
-                        # for name, param in model.named_parameters():
-                        #     if param.grad is None:
-                        #         print(name)
-
-                        # print(N,batch_idx,'batch_idx')
-                        # scaler.scale(det_loss).backward()
-                        # scaler.step(optimizer)
-                        # scaler.update()
-                        optimizer.step()
-                        ema.update()
-                        scheduler.step()
-
+                        # det_loss.backward()
+                        # optimizer.step()
+                        # ema.update()
+                        # scheduler.step()
+                        brdloss(
+                            det_loss,
+                            optimizer,
+                            clip_grad=None,
+                            parameters=model.parameters(),
+                            create_graph=False,
+                            update_grad=(batch_idx + 1) % 1 == 0,
+                        )
                     else:
                         det_score = det_score.softmax(dim=1).cpu().tolist()
                         det_target = det_target.cpu().tolist()

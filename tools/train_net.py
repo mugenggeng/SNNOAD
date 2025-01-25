@@ -17,6 +17,8 @@ from rekognition_online_action_detection.optimizers import build_optimizer
 from rekognition_online_action_detection.optimizers import build_scheduler
 from rekognition_online_action_detection.optimizers import build_ema
 from rekognition_online_action_detection.engines import do_train
+from rekognition_online_action_detection.optimizers import NativeScalerWithGradNormCount as NativeScaler
+
 
 from thop import profile
 from thop import clever_format
@@ -45,8 +47,8 @@ def main(cfg):
     checkpointer1.load(teach_model)
     # teach_model.eval()
 
-    bdr_loss = LaSNNLoss()
-    bdr_loss.to(device)
+    # bdr_loss = LaSNNLoss()
+    # bdr_loss.to(device)
     # print(teach_model)
     # model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
     # model1 = build_model(cfg, device)
@@ -66,7 +68,14 @@ def main(cfg):
 
     # Build optimizer
     optimizer = build_optimizer(cfg, model)
-
+    # param_groups = lrd.param_groups_lrd(
+    #     model_without_ddp,
+    #     args.weight_decay,
+    #     # no_weight_decay_list=model_without_ddp.no_weight_decay(),
+    #     layer_decay=args.layer_decay,
+    # )
+    # optimizer = optim_factory.Lamb(param_groups, trust_clip=True, lr=args.lr)
+    loss_scaler = NativeScaler()
     # Build ema
     ema = build_ema(model, 0.999)
 
@@ -83,7 +92,7 @@ def main(cfg):
         model,
         teach_model,
         criterion,
-        bdr_loss,
+        loss_scaler,
         optimizer,
         scheduler,
         ema,

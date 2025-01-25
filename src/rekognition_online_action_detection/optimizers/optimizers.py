@@ -4,8 +4,8 @@
 __all__ = ['build_optimizer']
 
 import torch.optim as optim
-
-
+import timm.optim.optim_factory as optim_factory
+import lr_decay_spikformer as lrd
 def build_optimizer(cfg, model):
     if cfg.SOLVER.OPTIMIZER == 'sgd':
         optimizer = optim.SGD(
@@ -27,6 +27,14 @@ def build_optimizer(cfg, model):
             [{'params': model.parameters(), 'initial_lr': cfg.SOLVER.BASE_LR}],
             lr=cfg.SOLVER.BASE_LR, weight_decay=cfg.SOLVER.WEIGHT_DECAY,
         )
+    elif cfg.SOLVER.OPTIMIZER == 'Lamb':
+        param_groups = lrd.param_groups_lrd(
+            model,
+            cfg.SOLVER.WEIGHT_DECAY,
+            # no_weight_decay_list=model_without_ddp.no_weight_decay(),
+            layer_decay=1.0,
+        )
+        optimizer = optim_factory.Lamb(param_groups, trust_clip=True, lr=cfg.SOLVER.BASE_LR)
     else:
         raise RuntimeError('Unknown optimizer: {}'.format(cfg.SOLVER.OPTIMIZER))
     return optimizer
