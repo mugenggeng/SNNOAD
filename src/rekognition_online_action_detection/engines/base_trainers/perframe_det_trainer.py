@@ -246,10 +246,10 @@ def do_perframe_det_train(cfg,
                     })
                     # print(det_loss,batch_idx,'det_loss')
                     if training:
-                        # optimizer.zero_grad()
+                        optimizer.zero_grad()
 
                         # det_loss.backward()
-                        # optimizer.step()
+                        optimizer.step()
                         ema.update()
                         scheduler.step()
                         brdloss(
