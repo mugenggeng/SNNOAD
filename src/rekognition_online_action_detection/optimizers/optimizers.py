@@ -5,7 +5,8 @@ __all__ = ['build_optimizer']
 
 import torch.optim as optim
 import timm.optim.optim_factory as optim_factory
-import lr_decay_spikformer as lrd
+from lr_decay_spikformer import param_groups_lrd
+
 def build_optimizer(cfg, model):
     if cfg.SOLVER.OPTIMIZER == 'sgd':
         optimizer = optim.SGD(
@@ -28,7 +29,7 @@ def build_optimizer(cfg, model):
             lr=cfg.SOLVER.BASE_LR, weight_decay=cfg.SOLVER.WEIGHT_DECAY,
         )
     elif cfg.SOLVER.OPTIMIZER == 'Lamb':
-        param_groups = lrd.param_groups_lrd(
+        param_groups = param_groups_lrd(
             model,
             cfg.SOLVER.WEIGHT_DECAY,
             # no_weight_decay_list=model_without_ddp.no_weight_decay(),
