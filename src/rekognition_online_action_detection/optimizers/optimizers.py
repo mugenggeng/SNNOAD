@@ -5,7 +5,7 @@ __all__ = ['build_optimizer']
 
 import torch.optim as optim
 import timm.optim.optim_factory as optim_factory
-from lr_decay_spikformer import param_groups_lrd
+from .lr_decay_spikformer import param_groups_lrd
 
 def build_optimizer(cfg, model):
     if cfg.SOLVER.OPTIMIZER == 'sgd':
