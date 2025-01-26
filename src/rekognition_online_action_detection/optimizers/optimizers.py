@@ -17,7 +17,7 @@ def param_groups_lrd(
     param_group_names = {}
     param_groups = {}
 
-    num_layers = len(model.gen_layer) + 2
+    num_layers = 3
 
     layer_scales = list(layer_decay ** (num_layers - i) for i in range(num_layers + 1))
 
