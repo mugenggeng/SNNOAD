@@ -85,6 +85,7 @@ def main(cfg):
     # Build scheduler
     scheduler = build_scheduler(
         cfg, optimizer, len(data_loaders['train']))
+    # scheduler =None
 
     do_train(
         cfg,
