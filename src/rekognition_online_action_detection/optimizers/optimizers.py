@@ -104,7 +104,7 @@ def build_optimizer(cfg, model):
             layer_decay=1.0,
         )
         # param_groups[0]['initial_lr'] = cfg.SOLVER.BASE_LR
-        optimizer = optim_factory.Lamb(model.parameters(), trust_clip=True, lr=cfg.SOLVER.BASE_LR)
+        optimizer = optim.Lamb(model.parameters(), lr=cfg.SOLVER.BASE_LR,weight_decay=cfg.SOLVER.WEIGHT_DECAY)
     else:
         raise RuntimeError('Unknown optimizer: {}'.format(cfg.SOLVER.OPTIMIZER))
     return optimizer
