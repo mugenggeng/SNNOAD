@@ -67,6 +67,8 @@ def get_layer_id_for_vit(name, num_layers):
         return 0
     elif name.startswith("patch_embed"):
         return 0
+    elif name in ['final_query', 'pos_encoding']:
+        return 0
     elif name.startswith("block"):
         # return int(name.split('.')[1]) + 1
         return num_layers
