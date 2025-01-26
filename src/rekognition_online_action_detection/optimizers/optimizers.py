@@ -105,6 +105,9 @@ def build_optimizer(cfg, model):
         )
         # param_groups[0]['initial_lr'] = cfg.SOLVER.BASE_LR
         optimizer = optim_factory.Lamb(model.parameters(), trust_clip=True, lr=cfg.SOLVER.BASE_LR)
+        for param_group in optimizer.param_groups:
+            param_group["initial_lr"] = cfg.SOLVER.BASE_LR # 手动添加 initial_lr 字段
+            # print(param_group)
     else:
         raise RuntimeError('Unknown optimizer: {}'.format(cfg.SOLVER.OPTIMIZER))
     return optimizer
