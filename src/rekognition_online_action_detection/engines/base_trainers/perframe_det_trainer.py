@@ -241,7 +241,7 @@ def do_perframe_det_train(cfg,
                         # print(det_loss)
                     # Output log for current batch
                     pbar.set_postfix({
-                        'lr': '{:.7f}'.format(scheduler.get_last_lr()[0]),
+                        # 'lr': '{:.7f}'.format(scheduler.get_last_lr()[0]),
                         'det_loss': '{:.5f}'.format(det_loss.item()),
                     })
                     # print(det_loss,batch_idx,'det_loss')
