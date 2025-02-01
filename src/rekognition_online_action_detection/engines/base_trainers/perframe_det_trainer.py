@@ -168,10 +168,10 @@ def do_perframe_det_train(cfg,
                         if training:
                             _,feature_TW,feature_TF = teach_model(*[x.to(device) for x in data[:-1]],epoch=epoch)
                             # print(feature_SW[0].shape,feature_TW[0].shape)
-                            brd_loss_w = brdloss(feature_SW[0], feature_TW[0].permute(1,2,0))
+                            # brd_loss_w = brdloss(feature_SW[0], feature_TW[0].permute(1,2,0))
                             geomloss_w = Geomloss(feature_SW[0], feature_TW[0].permute(1,2,0))
 
-                            brd_loss_f = brdloss(feature_SF[0], feature_TF[0].permute(1,2,0))
+                            # brd_loss_f = brdloss(feature_SF[0], feature_TF[0].permute(1,2,0))
                             geomloss_f = Geomloss(feature_SF[0], feature_TF[0].permute(1,2,0))
 
                             # print(brd_loss_w,brd_loss_f)
