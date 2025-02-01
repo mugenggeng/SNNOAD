@@ -165,32 +165,32 @@ def do_perframe_det_train(cfg,
                         # # print(model.device_ids,'model.device_ids')
 
                         det_scores, fut_scores,feature_SW,feature_SF = model(*[x.to(device) for x in data[:-1]],epoch)
-                        # if training:
-                            # _,feature_TW,feature_TF = teach_model(*[x.to(device) for x in data[:-1]],epoch=epoch)
+                        if training:
+                            _,feature_TW,feature_TF = teach_model(*[x.to(device) for x in data[:-1]],epoch=epoch)
                             # print(feature_SW[0].shape,feature_TW[0].shape)
-                            # brd_loss_w = brdloss(feature_SW[0], feature_TW[0].permute(1,2,0))
-                            # geomloss_w = Geomloss(feature_SW[0], feature_TW[0].permute(1,2,0))
+                            brd_loss_w = brdloss(feature_SW[0], feature_TW[0].permute(1,2,0))
+                            geomloss_w = Geomloss(feature_SW[0], feature_TW[0].permute(1,2,0))
 
-                            # brd_loss_f = brdloss(feature_SF[0], feature_TF[0].permute(1,2,0))
-                            # geomloss_f = Geomloss(feature_SF[0], feature_TF[0].permute(1,2,0))
+                            brd_loss_f = brdloss(feature_SF[0], feature_TF[0].permute(1,2,0))
+                            geomloss_f = Geomloss(feature_SF[0], feature_TF[0].permute(1,2,0))
 
                             # print(brd_loss_w,brd_loss_f)
                             # brd_loss_l = brdloss(feature_S[0], feature_T[0].permute(0,2,1))
                             # brd_loss = brd_loss_w + brd_loss_f
-                            # distill_weight = 1.
-                            # temp = 2.
-                            # loss_dist_logits_W = distill_weight * get_logits_loss(feature_TW[-1], feature_SW[-1], det_target,
-                            #                                                     temp, cfg.DATA.NUM_CLASSES)
+                            distill_weight = 1.
+                            temp = 2.
+                            loss_dist_logits_W = distill_weight * get_logits_loss(feature_TW[-1], feature_SW[-1], det_target,
+                                                                                temp, cfg.DATA.NUM_CLASSES)
 
-                            # loss_dist_logits_F = distill_weight * get_logits_loss(feature_TF[-1], feature_SF[-1],
-                            #                                                       fut_target,
-                            #                                                       temp, cfg.DATA.NUM_CLASSES)
+                            loss_dist_logits_F = distill_weight * get_logits_loss(feature_TF[-1], feature_SF[-1],
+                                                                                  fut_target,
+                                                                                  temp, cfg.DATA.NUM_CLASSES)
                             # loss_dist_W = brd_loss_w + loss_dist_logits_W * 0.5
                             # loss_dist_F = brd_loss_f + loss_dist_logits_F * 0.5
                             # loss_TW = loss_dist_F+loss_dist_W
                             # loss_TW = brd_loss_w + brd_loss_f + geomloss
                             # print(loss_dist_logits_W ,loss_dist_logits_F , geomloss_w , geomloss_f)
-                            # loss_TW = loss_dist_logits_W + loss_dist_logits_F + geomloss_w + geomloss_f
+                            loss_TW = loss_dist_logits_W + loss_dist_logits_F + geomloss_w + geomloss_f
                             # print(loss_dist_logits_W  + loss_dist_logits_F,geomloss_w + geomloss_f)
                             # print(loss_TW,loss_dist_F,loss_dist_W,'loss_TW,loss_dist_T,loss_dist_W')
                             # print(brd_loss_w,loss_dist_logits_W,'brd_loss_w,loss_dist_logits_')
@@ -237,29 +237,30 @@ def do_perframe_det_train(cfg,
                     # if training:
                         # print(brd_loss)
                     # print(det_loss,loss_TW)
-                    # det_loss += loss_TW
+                    det_loss += loss_TW
                         # print(det_loss)
                     # Output log for current batch
                     pbar.set_postfix({
-                        # 'lr': '{:.7f}'.format(scheduler.get_last_lr()[0]),
+                        'lr': '{:.7f}'.format(scheduler.get_last_lr()[0]),
                         'det_loss': '{:.5f}'.format(det_loss.item()),
                     })
                     # print(det_loss,batch_idx,'det_loss')
                     if training:
-                        # optimizer.zero_grad()
+                        optimizer.zero_grad()
 
-                        # det_loss.backward()
-                        # optimizer.step()
-                        # ema.update()
-                        # scheduler.step()
-                        brdloss(
-                            det_loss,
-                            optimizer,
-                            clip_grad=None,
-                            parameters=model.parameters(),
-                            create_graph=False,
-                            update_grad=(batch_idx + 1) % 1 == 0,
-                        )
+                        det_loss.backward()
+                        # for name, param in model.named_parameters():
+                        #     if param.grad is None:
+                        #         print(name)
+
+                        # print(N,batch_idx,'batch_idx')
+                        # scaler.scale(det_loss).backward()
+                        # scaler.step(optimizer)
+                        # scaler.update()
+                        optimizer.step()
+                        ema.update()
+                        scheduler.step()
+
                     else:
                         det_score = det_score.softmax(dim=1).cpu().tolist()
                         det_target = det_target.cpu().tolist()
