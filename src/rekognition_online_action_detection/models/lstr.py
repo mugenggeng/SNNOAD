@@ -1280,8 +1280,8 @@ class LSTR(nn.Module):
         # Build classifier
         self.future_enabled = cfg.MODEL.LSTR.FUTURE_SECONDS>0
 
-        self.work_weight = nn.Parameter(torch.rand(1024, 40))
-        self.fut_weight = nn.Parameter(torch.rand(1024, 48))
+        # self.work_weight = nn.Parameter(torch.rand(1024, 40))
+        # self.fut_weight = nn.Parameter(torch.rand(1024, 48))
             # CCI
         # self.gen_query = nn.Embedding(cfg.MODEL.LSTR.FUT_MODULE[0][0], embed_dim[-1])
         if self.future_enabled:
@@ -1548,8 +1548,10 @@ class LSTR(nn.Module):
         # fut_f = fut.reshape(-1, N_f)
         # n, _, fut_f = fft_to_continuous(fut_f, T_f * B_f * C_f)
         # fut_f = fut_f.reshape( T_f, B_f, C_f, N_f )
-        feature_SW.append(work.mean(0)+self.work_weight.unsqueeze(0).repeat(work_visual.shape[1],1,1))
-        feature_SF.append(fut.mean(0)+self.fut_weight.unsqueeze(0).repeat(work_visual.shape[1],1,1))
+        # feature_SW.append(work.mean(0)+self.work_weight.unsqueeze(0).repeat(work_visual.shape[1],1,1))
+        # feature_SF.append(fut.mean(0)+self.fut_weight.unsqueeze(0).repeat(work_visual.shape[1],1,1))
+        feature_SW.append(work.mean(0))
+        feature_SF.append(fut.mean(0))
         fut_scores = []
         work_scores = []
         if self.future_enabled:
