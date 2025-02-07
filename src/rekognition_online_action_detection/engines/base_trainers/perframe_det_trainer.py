@@ -261,6 +261,7 @@ def do_perframe_det_train(cfg,
                         # torch.nn.utils.clip_grad_norm_(model.parameters(), clip_value)
                         for name, param in model.named_parameters():
                             if 'classifier' in name:
+                                print('111')
                                 torch.nn.utils.clip_grad_norm_(param, 5.0)
                         optimizer.step()
                         ema.update()
