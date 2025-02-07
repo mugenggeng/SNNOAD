@@ -263,9 +263,9 @@ def do_perframe_det_train(cfg,
                         ema.update()
                         scheduler.step()
 
-                        for name, param in model.named_parameters():
-                            if param.grad is not None:
-                                print(f"Layer: {name}, Max Gradient: {param.grad.abs().max().item()}")
+                        # for name, param in model.named_parameters():
+                        #     if param.grad is not None:
+                        #         print(f"Layer: {name}, Max Gradient: {param.grad.abs().max().item()}")
 
                     else:
                         det_score = det_score.softmax(dim=1).cpu().tolist()
