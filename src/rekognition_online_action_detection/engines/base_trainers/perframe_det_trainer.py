@@ -257,8 +257,11 @@ def do_perframe_det_train(cfg,
                         # scaler.scale(det_loss).backward()
                         # scaler.step(optimizer)
                         # scaler.update()
-                        clip_value = 10.0  # 设置裁剪阈值
-                        torch.nn.utils.clip_grad_norm_(model.parameters(), clip_value)
+                        # clip_value = 10.0  # 设置裁剪阈值
+                        # torch.nn.utils.clip_grad_norm_(model.parameters(), clip_value)
+                        for name, param in model.named_parameters():
+                            if 'classifier' in name:
+                                torch.nn.utils.clip_grad_norm_(param, 5.0)
                         optimizer.step()
                         ema.update()
                         scheduler.step()
