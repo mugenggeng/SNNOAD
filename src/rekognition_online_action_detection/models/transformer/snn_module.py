@@ -268,7 +268,7 @@ class MS_ConvBlock(nn.Module):
             dim, dim * mlp_ratio, kernel_size=3, padding=1, groups=1, bias=bias
         )
         self.conv1_1 = nn.Conv1d(
-            dim, dim * mlp_ratio, kernel_size=1, padding=1, groups=1, bias=bias
+            dim, dim * mlp_ratio, kernel_size=1, padding=0, groups=1, bias=bias
         )
         # self.conv1 = Dcls1d(dim, dim * mlp_ratio, kernel_count=1, groups = 1, dilated_kernel_size = 7, bias=False, version='gauss')
         # self.conv1 = RepConv(dim, dim*mlp_ratio)
@@ -282,7 +282,7 @@ class MS_ConvBlock(nn.Module):
             dim * mlp_ratio, output_dim, kernel_size=3, padding=1, groups=1, bias=bias
         )
         self.conv2_1 = nn.Conv1d(
-            dim * mlp_ratio, output_dim, kernel_size=1, padding=1, groups=1, bias=bias
+            dim * mlp_ratio, output_dim, kernel_size=1, padding=0, groups=1, bias=bias
         )
         # self.conv2 = Dcls1d(dim * mlp_ratio, output_dim, kernel_count=1, groups=1, dilated_kernel_size=7, bias=False, version='gauss')
         # self.conv2 = RepConv(dim*mlp_ratio, dim)
