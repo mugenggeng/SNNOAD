@@ -179,6 +179,14 @@ class RepConv(nn.Module):
         return self.body(x)
 
 
+class LearnableLIFNode(MultiStepLIFNode):
+    def __init__(self, tau=2.0, **kwargs):
+        super().__init__(tau, **kwargs)
+        self.v_threshold = nn.Parameter(torch.tensor(1.0))  # 可学习阈值
+
+    def extra_repr(self):
+        return f"v_threshold={self.v_threshold.item():.2f}, tau={self.tau}"
+
 class SepConv(nn.Module):
     r"""
     Inverted separable convolution from MobileNetV2: https://arxiv.org/abs/1801.04381.
@@ -195,11 +203,11 @@ class SepConv(nn.Module):
     ):
         super().__init__()
         med_channels = int(expansion_ratio * dim)
-        self.lif1 = MultiStepLIFNode(tau=2.0, detach_reset=True, backend="cupy")
+        self.lif1 = LearnableLIFNode(tau=2.0, detach_reset=True, backend="cupy")
         # self.lif1 = mem_update()
         self.pwconv1 = nn.Conv1d(dim, med_channels, kernel_size=1, stride=1, bias=bias)
         self.bn1 = nn.BatchNorm1d(med_channels)
-        self.lif2 = MultiStepLIFNode(tau=2.0, detach_reset=True, backend="cupy")
+        self.lif2 = LearnableLIFNode(tau=2.0, detach_reset=True, backend="cupy")
         # self.lif2 = mem_update()
         self.dwconv = nn.Conv1d(
             med_channels,
@@ -235,7 +243,7 @@ class MultiScaleStepLIFNode(nn.Module):
         self.scale = len(radio)
         self.lif_list = nn.ModuleList()
         for ra in radio:
-            self.lif_list.append(MultiStepLIFNode(tau=tau, detach_reset=detach_reset, backend=backend,v_threshold=ra))
+            self.lif_list.append(LearnableLIFNode(tau=tau, detach_reset=detach_reset, backend=backend,v_threshold=ra))
 
     def forward(self, x):
         res = x
@@ -260,21 +268,21 @@ class MS_ConvBlock(nn.Module):
         # self.Conv = SepConv(dim=dim)
         # self.Conv = MHMC(dim=dim)
         self.mlp_ratio=mlp_ratio
-        self.lif1 = MultiStepLIFNode(tau=2.0, detach_reset=True, backend="cupy")
+        self.lif1 = LearnableLIFNode(tau=2.0, detach_reset=True, backend="cupy")
         # self.lif1 = neuron.LIFNode(tau=2.0, v_threshold=1.0,
         #                                                surrogate_function=surrogate.ATan(alpha = 5.0), detach_reset=True,
         #                                                step_mode='m', decay_input=False, store_v_seq = True)
         self.conv1 = nn.Conv1d(
             dim, dim * mlp_ratio, kernel_size=3, padding=1, groups=1, bias=bias
         )
-        self.conv1_1 = nn.Conv1d(
-            dim, dim , kernel_size=1, padding=0, groups=1, bias=bias
-        )
+        # self.conv1_1 = nn.Conv1d(
+        #     dim, dim , kernel_size=1, padding=0, groups=1, bias=bias
+        # )
         # self.conv1 = Dcls1d(dim, dim * mlp_ratio, kernel_count=1, groups = 1, dilated_kernel_size = 7, bias=False, version='gauss')
         # self.conv1 = RepConv(dim, dim*mlp_ratio)
         # self.drop_path1 = DropPath(drop_path) if drop_path > 0. else nn.Identity()
         self.bn1 = nn.BatchNorm1d(dim * mlp_ratio)  # 这里可以进行改进
-        self.lif2 = MultiStepLIFNode(tau=2.0, detach_reset=True, backend="cupy")
+        self.lif2 = LearnableLIFNode(tau=2.0, detach_reset=True, backend="cupy")
         # self.lif2 = neuron.LIFNode(tau=2.0, v_threshold=1.0,
         #                                                surrogate_function=surrogate.ATan(alpha = 5.0), detach_reset=True,
         #                                                step_mode='m', decay_input=False, store_v_seq = True)
@@ -291,7 +299,7 @@ class MS_ConvBlock(nn.Module):
         T, B, C, N = x.shape
 
         # x = self.Conv(x) + x
-        x_feat = self.conv1_1(x.flatten(0, 1)).reshape(T, B, C, -1)
+        x_feat = x
         # print(x.shape)
         x = self.lif1(x).flatten(0, 1)
         # x1 = self.conv1_1(x)
@@ -328,13 +336,13 @@ class MS_Star_Block(nn.Module):
     def __init__(self, dim, mlp_ratio=3, drop_path=0.2):
         super().__init__()
         self.dwconv = ConvBN(dim, dim, 7, 1, (7 - 1) // 2, groups=dim, with_bn=True)
-        self.lif1 = MultiStepLIFNode(tau=2.0, detach_reset=True, backend="cupy")
+        self.lif1 = LearnableLIFNode(tau=2.0, detach_reset=True, backend="cupy")
         self.f1 = ConvBN(dim, mlp_ratio * dim, 1, with_bn=False)
         self.f2 = ConvBN(dim, mlp_ratio * dim, 1, with_bn=False)
         self.g = ConvBN(mlp_ratio * dim, dim, 1, with_bn=True)
         self.dwconv2 = ConvBN(dim, dim, 7, 1, (7 - 1) // 2, groups=dim, with_bn=False)
         self.act = nn.ReLU6()
-        # self.act = MultiStepLIFNode(tau=2.0, detach_reset=True, backend="cupy")
+        # self.act = LearnableLIFNode(tau=2.0, detach_reset=True, backend="cupy")
         self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
 
     def forward(self, x):
@@ -361,13 +369,13 @@ class MS_ConvBlock_T(nn.Module):
         self.Conv = SepConv(dim=in_channel)
         # self.Conv = MHMC(dim=dim)
 
-        self.lif1 = MultiStepLIFNode(tau=2.0, detach_reset=True, backend="cupy")
+        self.lif1 = LearnableLIFNode(tau=2.0, detach_reset=True, backend="cupy")
         self.conv1 = nn.Conv1d(
             in_channel, in_channel * mlp_ratio, kernel_size=3, padding=1, groups=1, bias=False
         )
         # self.conv1 = RepConv(dim, dim*mlp_ratio)
         self.bn1 = nn.BatchNorm1d(in_channel * mlp_ratio)  # 这里可以进行改进
-        self.lif2 = MultiStepLIFNode(tau=2.0, detach_reset=True, backend="cupy")
+        self.lif2 = LearnableLIFNode(tau=2.0, detach_reset=True, backend="cupy")
         self.conv2 = nn.Conv1d(
             in_channel * mlp_ratio, out_channel, kernel_size=3, padding=1, groups=1, bias=False
         )
@@ -402,7 +410,7 @@ class MS_MLP(nn.Module):
         self.fc1_conv = nn.Conv1d(in_features, hidden_features, kernel_size=1, stride=1)
         # self.fc1_conv= Dcls1d(in_features, hidden_features,kernel_count=1, groups=1, padding=0, dilated_kernel_size=1, bias=False,version='gauss')
         self.fc1_bn = nn.BatchNorm1d(hidden_features)
-        self.fc1_lif = MultiStepLIFNode(tau=2.0, detach_reset=True, backend="cupy")
+        self.fc1_lif = LearnableLIFNode(tau=2.0, detach_reset=True, backend="cupy")
 
         # self.fc2 = linear_unit(hidden_features, out_features)
         self.fc2_conv = nn.Conv1d(
@@ -410,7 +418,7 @@ class MS_MLP(nn.Module):
         # self.fc2_conv = Dcls1d(hidden_features, out_features, kernel_count=1, groups=1, padding=0, dilated_kernel_size=1,
         #                        bias=False, version='gauss')
         self.fc2_bn = nn.BatchNorm1d(out_features)
-        self.fc2_lif = MultiStepLIFNode(tau=2.0, detach_reset=True, backend="cupy")
+        self.fc2_lif = LearnableLIFNode(tau=2.0, detach_reset=True, backend="cupy")
         # self.drop = nn.Dropout(0.1)
 
         self.c_hidden = hidden_features
@@ -440,17 +448,17 @@ class Token_QK_Attention(nn.Module):
 
         self.q_conv = nn.Conv1d(dim, dim, kernel_size=1, stride=1, bias=False)
         self.q_bn = nn.BatchNorm1d(dim)
-        self.q_lif = MultiStepLIFNode(tau=2.0, detach_reset=True, backend='cupy')
+        self.q_lif = LearnableLIFNode(tau=2.0, detach_reset=True, backend='cupy')
 
         self.k_conv = nn.Conv1d(dim, dim, kernel_size=1, stride=1, bias=False)
         self.k_bn = nn.BatchNorm1d(dim)
-        self.k_lif = MultiStepLIFNode(tau=2.0, detach_reset=True, backend='cupy')
+        self.k_lif = LearnableLIFNode(tau=2.0, detach_reset=True, backend='cupy')
 
-        self.attn_lif = MultiStepLIFNode(tau=2.0, v_threshold=0.5, detach_reset=True, backend='cupy')
+        self.attn_lif = LearnableLIFNode(tau=2.0, v_threshold=0.5, detach_reset=True, backend='cupy')
 
         self.proj_conv = nn.Conv1d(dim, dim, kernel_size=1, stride=1)
         self.proj_bn = nn.BatchNorm1d(dim)
-        self.proj_lif = MultiStepLIFNode(tau=2.0, detach_reset=True, backend='cupy')
+        self.proj_lif = LearnableLIFNode(tau=2.0, detach_reset=True, backend='cupy')
 
 
     def forward(self, q,k):
@@ -488,20 +496,20 @@ class Spiking_Self_Attention(nn.Module):
         self.scale = 0.125
         self.q_conv = nn.Conv1d(dim, dim, kernel_size=1, stride=1,bias=False)
         self.q_bn = nn.BatchNorm1d(dim)
-        self.q_lif = MultiStepLIFNode(tau=2.0, detach_reset=True, backend='cupy')
+        self.q_lif = LearnableLIFNode(tau=2.0, detach_reset=True, backend='cupy')
 
         self.k_conv = nn.Conv1d(dim, dim, kernel_size=1, stride=1,bias=False)
         self.k_bn = nn.BatchNorm1d(dim)
-        self.k_lif = MultiStepLIFNode(tau=2.0, detach_reset=True, backend='cupy')
+        self.k_lif = LearnableLIFNode(tau=2.0, detach_reset=True, backend='cupy')
 
         self.v_conv = nn.Conv1d(dim, dim, kernel_size=1, stride=1,bias=False)
         self.v_bn = nn.BatchNorm1d(dim)
-        self.v_lif = MultiStepLIFNode(tau=2.0, detach_reset=True, backend='cupy')
-        self.attn_lif = MultiStepLIFNode(tau=2.0, v_threshold=0.5, detach_reset=True, backend='cupy')
+        self.v_lif = LearnableLIFNode(tau=2.0, detach_reset=True, backend='cupy')
+        self.attn_lif = LearnableLIFNode(tau=2.0, v_threshold=0.5, detach_reset=True, backend='cupy')
 
         self.proj_conv = nn.Conv1d(dim, dim, kernel_size=1, stride=1)
         self.proj_bn = nn.BatchNorm1d(dim)
-        self.proj_lif = MultiStepLIFNode(tau=2.0, detach_reset=True, backend='cupy')
+        self.proj_lif = LearnableLIFNode(tau=2.0, detach_reset=True, backend='cupy')
 
         self.qkv_mp = nn.MaxPool1d(4)
 
@@ -560,7 +568,7 @@ class MS_Attention_RepConv_qkv_id(nn.Module):
         self.num_heads = num_heads
         self.scale = 0.125
 
-        # self.head_lif = MultiStepLIFNode(tau=2.0, detach_reset=True, backend="cupy")
+        # self.head_lif = LearnableLIFNode(tau=2.0, detach_reset=True, backend="cupy")
 
         self.q_conv = nn.Sequential(RepConv(dim, dim, bias=False), nn.BatchNorm1d(dim))
 
@@ -568,13 +576,13 @@ class MS_Attention_RepConv_qkv_id(nn.Module):
         #
         self.v_conv = nn.Sequential(RepConv(dim, dim, bias=False), nn.BatchNorm1d(dim))
 
-        self.q_lif = MultiStepLIFNode(tau=2.0, detach_reset=True, backend="cupy")
+        self.q_lif = LearnableLIFNode(tau=2.0, detach_reset=True, backend="cupy")
 
-        self.k_lif = MultiStepLIFNode(tau=2.0, detach_reset=True, backend="cupy")
+        self.k_lif = LearnableLIFNode(tau=2.0, detach_reset=True, backend="cupy")
 
-        self.v_lif = MultiStepLIFNode(tau=2.0, detach_reset=True, backend="cupy")
+        self.v_lif = LearnableLIFNode(tau=2.0, detach_reset=True, backend="cupy")
 
-        self.attn_lif = MultiStepLIFNode(
+        self.attn_lif = LearnableLIFNode(
             tau=2.0, v_threshold=0.5, detach_reset=True, backend="cupy"
         )
 
@@ -903,7 +911,7 @@ class MS_DownSampling(nn.Module):
         self.dim = embed_dims
         self.encode_bn = nn.BatchNorm1d(embed_dims)
         # if not first_layer:
-        #     self.encode_lif = MultiStepLIFNode(
+        #     self.encode_lif = LearnableLIFNode(
         #         tau=2.0, detach_reset=True, backend="cupy"
         #     )
 
@@ -925,7 +933,7 @@ class SpatialAttention_SNN(nn.Module):
         super(SpatialAttention_SNN, self).__init__()
         self.sa = nn.Conv1d(2, 1, 7, padding=3, padding_mode='reflect', bias=True)
         self.bn = nn.BatchNorm1d(1)
-        self.lif = MultiStepLIFNode(tau=2.0, detach_reset=True, backend="cupy")
+        self.lif = LearnableLIFNode(tau=2.0, detach_reset=True, backend="cupy")
 
     def forward(self, x):
         T,B,C,N = x.shape
@@ -945,7 +953,7 @@ class ChannelAttention_SNN(nn.Module):
     def __init__(self, dim, reduction=8):
         super(ChannelAttention_SNN, self).__init__()
         self.gap = nn.AdaptiveAvgPool1d(1)
-        self.lif = MultiStepLIFNode(tau=2.0, detach_reset=True, backend="cupy")
+        self.lif = LearnableLIFNode(tau=2.0, detach_reset=True, backend="cupy")
         self.ca = nn.Sequential(
             nn.Conv1d(dim, dim // reduction, 1, padding=0, bias=True),
             nn.BatchNorm1d(dim // reduction),
@@ -968,7 +976,7 @@ class PixelAttention_SNN(nn.Module):
         super(PixelAttention_SNN, self).__init__()
         self.pa2 = nn.Conv1d(2 * dim, dim, 7, padding=3, padding_mode='reflect', groups=dim, bias=True)
         self.sigmoid = nn.Sigmoid()
-        self.lif = MultiStepLIFNode(tau=2.0, detach_reset=True, backend="cupy")
+        self.lif = LearnableLIFNode(tau=2.0, detach_reset=True, backend="cupy")
         self.bn = nn.BatchNorm1d(dim)
 
     def forward(self, x, pattn1):
