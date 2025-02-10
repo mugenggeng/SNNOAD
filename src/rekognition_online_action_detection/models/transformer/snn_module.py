@@ -294,8 +294,8 @@ class MS_ConvBlock(nn.Module):
     def forward(self, x):
         T, B, C, N = x.shape
         if hasattr(self, 'prev_state'):
-            x = x + 0.5 * self.temporal_norm(self.temporal_proj(self.prev_state.flatten(0,1)))
-            x = x.reshape(T, B, C, -1)
+            x = self.temporal_norm(self.temporal_proj(self.prev_state.flatten(0,1))).reshape(T, B, C, -1)
+            x = x + 0.5 * x
         # x = self.Conv(x) + x
         x_feat = x
         # print(x.shape)
