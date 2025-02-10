@@ -183,7 +183,7 @@ class LearnableLIFNode(MultiStepLIFNode):
     def __init__(self, tau=2.0, device=None,**kwargs):
         super().__init__(tau, **kwargs)
         self.v_threshold_learn = nn.Parameter(torch.tensor(1.0)).to('cuda')  # 可学习阈值
-        self.v_threshold = self.v_threshold_learn.cpu().detch()
+        self.v_threshold = self.v_threshold_learn.cpu().detach()
 
     def extra_repr(self):
         return f"v_threshold={self.v_threshold.item():.2f}, tau={self.tau}"
