@@ -18,7 +18,7 @@ def main(cfg):
     logger = setup_logger(cfg, phase='test')
 
     # Build model
-    model = build_model(cfg, device)
+    model = build_model(cfg, device=device)
 
     # Load pretrained model
     checkpointer.load(model)
