@@ -268,7 +268,7 @@ class MS_ConvBlock(nn.Module):
             dim, dim * mlp_ratio, kernel_size=3, padding=1, groups=1, bias=bias
         )
         self.conv1_1 = nn.Conv1d(
-            dim, dim * mlp_ratio, kernel_size=1, padding=0, groups=1, bias=bias
+            dim, dim , kernel_size=1, padding=0, groups=1, bias=bias
         )
         # self.conv1 = Dcls1d(dim, dim * mlp_ratio, kernel_count=1, groups = 1, dilated_kernel_size = 7, bias=False, version='gauss')
         # self.conv1 = RepConv(dim, dim*mlp_ratio)
@@ -281,9 +281,7 @@ class MS_ConvBlock(nn.Module):
         self.conv2 = nn.Conv1d(
             dim * mlp_ratio, output_dim, kernel_size=3, padding=1, groups=1, bias=bias
         )
-        self.conv2_1 = nn.Conv1d(
-            dim * mlp_ratio, output_dim, kernel_size=1, padding=0, groups=1, bias=bias
-        )
+
         # self.conv2 = Dcls1d(dim * mlp_ratio, output_dim, kernel_count=1, groups=1, dilated_kernel_size=7, bias=False, version='gauss')
         # self.conv2 = RepConv(dim*mlp_ratio, dim)
         # self.drop_path2 = DropPath(drop_path) if drop_path > 0. else nn.Identity()
@@ -293,11 +291,11 @@ class MS_ConvBlock(nn.Module):
         T, B, C, N = x.shape
 
         # x = self.Conv(x) + x
-        x_feat = x
+        x_feat = self.conv1_1(x)
         # print(x.shape)
         x = self.lif1(x).flatten(0, 1)
         x1 = self.conv1_1(x)
-        x = self.bn1(self.conv1(x)+x1).reshape(T, B, self.mlp_ratio * C, -1)
+        x = self.bn1(self.conv1(x)).reshape(T, B, self.mlp_ratio * C, -1)
         # print(x.shape)
         # x = F.pad(x, (3, 3), 'constant', 0)
         # print(x.shape)
@@ -306,7 +304,7 @@ class MS_ConvBlock(nn.Module):
         # x = x_feat + x
         x = self.lif2(x).flatten(0,1)
         x2 = self.conv2_1(x)
-        x = self.bn2(self.conv2(x)+x2).reshape(T, B, C, -1)
+        x = self.bn2(self.conv2(x)).reshape(T, B, C, -1)
         # x = x.reshape(T, B, C, N)
         # self.lif2(x)
         # x = F.pad(x, (3, 3), 'constant', 0)
