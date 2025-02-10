@@ -180,7 +180,7 @@ class RepConv(nn.Module):
 
 
 class LearnableLIFNode(MultiStepLIFNode):
-    def __init__(self, tau=2.0, device='cuda',**kwargs):
+    def __init__(self, tau=2.0, device=None,**kwargs):
         super().__init__(tau, **kwargs)
         self.v_threshold = nn.Parameter(torch.tensor(1.0)).to(device)  # 可学习阈值
 
