@@ -1151,7 +1151,7 @@ class LSTR(nn.Module):
         # Build long feature heads
         self.long_enabled=True
         self.work_enabled=True
-        device= cfg.device
+        device= 'cuda'
         self.long_memory_num_samples = cfg.MODEL.LSTR.LONG_MEMORY_NUM_SAMPLES
         if self.long_enabled:
             self.feature_head_long = build_feature_head(cfg,dim=in_channels)
