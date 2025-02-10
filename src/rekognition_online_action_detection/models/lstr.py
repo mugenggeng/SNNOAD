@@ -1151,7 +1151,6 @@ class LSTR(nn.Module):
         # Build long feature heads
         self.long_enabled=True
         self.work_enabled=True
-        device= 'cuda'
         self.long_memory_num_samples = cfg.MODEL.LSTR.LONG_MEMORY_NUM_SAMPLES
         if self.long_enabled:
             self.feature_head_long = build_feature_head(cfg,dim=in_channels)
@@ -1185,7 +1184,7 @@ class LSTR(nn.Module):
         )
 
         self.ConvBlock1_1 = nn.ModuleList(
-            [MS_ConvBlock(dim=embed_dim[0] // 2, output_dim = embed_dim[0] // 2,mlp_ratio=mlp_ratios,device=device) for i in range(times)]
+            [MS_ConvBlock(dim=embed_dim[0] // 2, output_dim = embed_dim[0] // 2,mlp_ratio=mlp_ratios) for i in range(times)]
         )
 
         # self.fusion1_1 = CGAFusion_SNN(dim=embed_dim[0] // 2)
@@ -1201,7 +1200,7 @@ class LSTR(nn.Module):
         )
 
         self.ConvBlock1_2 = nn.ModuleList(
-            [MS_ConvBlock(dim=embed_dim[0], output_dim = embed_dim[0], mlp_ratio=mlp_ratios,device=device) for i in range(times)]
+            [MS_ConvBlock(dim=embed_dim[0], output_dim = embed_dim[0], mlp_ratio=mlp_ratios) for i in range(times)]
         )
 
         # self.fusion1_2 = CGAFusion_SNN(dim=embed_dim[0])
@@ -1219,7 +1218,7 @@ class LSTR(nn.Module):
         )
 
         self.ConvBlock2_1 = nn.ModuleList(
-            [MS_ConvBlock(dim=embed_dim[1], output_dim = embed_dim[1], mlp_ratio=mlp_ratios,device=device) for i in range(times)]
+            [MS_ConvBlock(dim=embed_dim[1], output_dim = embed_dim[1], mlp_ratio=mlp_ratios) for i in range(times)]
         )
 
         # self.fusion2_1 = CGAFusion_SNN(dim=embed_dim[1])
@@ -1235,7 +1234,7 @@ class LSTR(nn.Module):
         )
 
         self.ConvBlock3_1 = nn.ModuleList(
-            [MS_ConvBlock(dim=embed_dim[2], output_dim = embed_dim[2], mlp_ratio=mlp_ratios,device=device) for i in range(times)]
+            [MS_ConvBlock(dim=embed_dim[2], output_dim = embed_dim[2], mlp_ratio=mlp_ratios) for i in range(times)]
         )
 
         # self.fusion3_1 = CGAFusion_SNN(dim=embed_dim[2])
@@ -1254,7 +1253,7 @@ class LSTR(nn.Module):
 
 
         self.ConvBlock4_1 = nn.ModuleList(
-            [MS_ConvBlock(dim=embed_dim[3], output_dim = embed_dim[3], mlp_ratio=mlp_ratios,device=device) for i in range(times)]
+            [MS_ConvBlock(dim=embed_dim[3], output_dim = embed_dim[3], mlp_ratio=mlp_ratios) for i in range(times)]
         )
         # self.fusion4_1 = CGAFusion_SNN(dim=embed_dim[3])
 
@@ -1274,7 +1273,6 @@ class LSTR(nn.Module):
             drop_path=dpr[j],
             norm_layer=norm_layer,
             sr_ratio=sr_ratios,
-            device=device
         ) for j in range(depths)]
         )
 
@@ -1299,7 +1297,6 @@ class LSTR(nn.Module):
                     drop_path=dpr[-1],
                     norm_layer=norm_layer,
                     sr_ratio=sr_ratios,
-                    device=device
                 )
             self.pos_encoding = tr.PositionalEncoding(embed_dim[-1], self.dropout)
             self.final_query = nn.Embedding(cfg.MODEL.LSTR.FUT_MODULE[0][0], embed_dim[-1])
