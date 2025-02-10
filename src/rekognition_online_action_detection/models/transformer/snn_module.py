@@ -180,9 +180,9 @@ class RepConv(nn.Module):
 
 
 class LearnableLIFNode(MultiStepLIFNode):
-    def __init__(self, tau=2.0, **kwargs):
+    def __init__(self, tau=2.0, device='cuda',**kwargs):
         super().__init__(tau, **kwargs)
-        self.v_threshold = nn.Parameter(torch.tensor(1.0))  # 可学习阈值
+        self.v_threshold = nn.Parameter(torch.tensor(1.0)).to(device)  # 可学习阈值
 
     def extra_repr(self):
         return f"v_threshold={self.v_threshold.item():.2f}, tau={self.tau}"
@@ -262,13 +262,14 @@ class MS_ConvBlock(nn.Module):
         mlp_ratio=4.0,
         drop_path=0.0,
         bias = False,
+        device=None,
     ):
         super().__init__()
 
         # self.Conv = SepConv(dim=dim)
         # self.Conv = MHMC(dim=dim)
         self.mlp_ratio=mlp_ratio
-        self.lif1 = LearnableLIFNode(tau=2.0, detach_reset=True, backend="cupy")
+        self.lif1 = LearnableLIFNode(tau=2.0, detach_reset=True, backend="cupy",device=device)
         # self.lif1 = neuron.LIFNode(tau=2.0, v_threshold=1.0,
         #                                                surrogate_function=surrogate.ATan(alpha = 5.0), detach_reset=True,
         #                                                step_mode='m', decay_input=False, store_v_seq = True)
@@ -282,7 +283,7 @@ class MS_ConvBlock(nn.Module):
         # self.conv1 = RepConv(dim, dim*mlp_ratio)
         # self.drop_path1 = DropPath(drop_path) if drop_path > 0. else nn.Identity()
         self.bn1 = nn.BatchNorm1d(dim * mlp_ratio)  # 这里可以进行改进
-        self.lif2 = LearnableLIFNode(tau=2.0, detach_reset=True, backend="cupy")
+        self.lif2 = LearnableLIFNode(tau=2.0, detach_reset=True, backend="cupy",device=device)
         # self.lif2 = neuron.LIFNode(tau=2.0, v_threshold=1.0,
         #                                                surrogate_function=surrogate.ATan(alpha = 5.0), detach_reset=True,
         #                                                step_mode='m', decay_input=False, store_v_seq = True)
@@ -401,7 +402,7 @@ class MS_ConvBlock_T(nn.Module):
 
 class MS_MLP(nn.Module):
     def __init__(
-        self, in_features, hidden_features=None, out_features=None, drop=0.0, layer=0
+        self, in_features, hidden_features=None, out_features=None, drop=0.0, layer=0,device=None
     ):
         super().__init__()
         out_features = out_features or in_features
@@ -410,7 +411,7 @@ class MS_MLP(nn.Module):
         self.fc1_conv = nn.Conv1d(in_features, hidden_features, kernel_size=1, stride=1)
         # self.fc1_conv= Dcls1d(in_features, hidden_features,kernel_count=1, groups=1, padding=0, dilated_kernel_size=1, bias=False,version='gauss')
         self.fc1_bn = nn.BatchNorm1d(hidden_features)
-        self.fc1_lif = LearnableLIFNode(tau=2.0, detach_reset=True, backend="cupy")
+        self.fc1_lif = LearnableLIFNode(tau=2.0, detach_reset=True, backend="cupy",device=device)
 
         # self.fc2 = linear_unit(hidden_features, out_features)
         self.fc2_conv = nn.Conv1d(
@@ -418,7 +419,7 @@ class MS_MLP(nn.Module):
         # self.fc2_conv = Dcls1d(hidden_features, out_features, kernel_count=1, groups=1, padding=0, dilated_kernel_size=1,
         #                        bias=False, version='gauss')
         self.fc2_bn = nn.BatchNorm1d(out_features)
-        self.fc2_lif = LearnableLIFNode(tau=2.0, detach_reset=True, backend="cupy")
+        self.fc2_lif = LearnableLIFNode(tau=2.0, detach_reset=True, backend="cupy",device=device)
         # self.drop = nn.Dropout(0.1)
 
         self.c_hidden = hidden_features
@@ -559,6 +560,7 @@ class MS_Attention_RepConv_qkv_id(nn.Module):
         attn_drop=0.0,
         proj_drop=0.0,
         sr_ratio=1,
+        device=None,
     ):
         super().__init__()
         assert (
@@ -576,14 +578,14 @@ class MS_Attention_RepConv_qkv_id(nn.Module):
         #
         self.v_conv = nn.Sequential(RepConv(dim, dim, bias=False), nn.BatchNorm1d(dim))
 
-        self.q_lif = LearnableLIFNode(tau=2.0, detach_reset=True, backend="cupy")
+        self.q_lif = LearnableLIFNode(tau=2.0, detach_reset=True, backend="cupy",device=device)
 
-        self.k_lif = LearnableLIFNode(tau=2.0, detach_reset=True, backend="cupy")
+        self.k_lif = LearnableLIFNode(tau=2.0, detach_reset=True, backend="cupy",device=device)
 
-        self.v_lif = LearnableLIFNode(tau=2.0, detach_reset=True, backend="cupy")
+        self.v_lif = LearnableLIFNode(tau=2.0, detach_reset=True, backend="cupy",device=device)
 
         self.attn_lif = LearnableLIFNode(
-            tau=2.0, v_threshold=0.5, detach_reset=True, backend="cupy"
+            tau=2.0, v_threshold=0.5, detach_reset=True, backend="cupy",device=device
         )
 
         self.proj_conv = nn.Sequential(
@@ -696,6 +698,7 @@ class MS_Block(nn.Module):
         drop_path=0.0,
         norm_layer=nn.LayerNorm,
         sr_ratio=1,
+        device=None,
     ):
         super().__init__()
 
@@ -707,6 +710,7 @@ class MS_Block(nn.Module):
             attn_drop=attn_drop,
             proj_drop=drop,
             sr_ratio=sr_ratio,
+            device=device
         )
 
         self.attn1 = MS_Attention_RepConv_qkv_id(
@@ -717,12 +721,13 @@ class MS_Block(nn.Module):
             attn_drop=attn_drop,
             proj_drop=drop,
             sr_ratio=sr_ratio,
+            device=device
         )
 
         # self.conv = nn.Conv1d(dim,dim,kernel_size=1)
         self.drop_path = DropPath(drop_path) if drop_path > 0.0 else nn.Identity()
         mlp_hidden_dim = int(dim * mlp_ratio)
-        self.mlp = MS_MLP(in_features=dim, hidden_features=mlp_hidden_dim, drop=drop)
+        self.mlp = MS_MLP(in_features=dim, hidden_features=mlp_hidden_dim, drop=drop,device=device)
 
     def forward(self, q,k):
         T,B,C,N = q.shape

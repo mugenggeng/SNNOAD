@@ -10,7 +10,7 @@ META_ARCHITECTURES = Registry()
 
 def build_model(cfg, name='LSTR', device=None):
     print(META_ARCHITECTURES)
-    model = META_ARCHITECTURES[name](cfg)
+    model = META_ARCHITECTURES[name](cfg,device=device)
     from .weights_init import weights_init
     model.apply(weights_init)
     return model.to(device)
