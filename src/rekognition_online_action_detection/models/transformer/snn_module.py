@@ -291,10 +291,10 @@ class MS_ConvBlock(nn.Module):
         T, B, C, N = x.shape
 
         # x = self.Conv(x) + x
-        x_feat = self.conv1_1(x)
+        x_feat = self.conv1_1(x.flatten(0, 1)).reshape(T, B, C, -1)
         # print(x.shape)
         x = self.lif1(x).flatten(0, 1)
-        x1 = self.conv1_1(x)
+        # x1 = self.conv1_1(x)
         x = self.bn1(self.conv1(x)).reshape(T, B, self.mlp_ratio * C, -1)
         # print(x.shape)
         # x = F.pad(x, (3, 3), 'constant', 0)
@@ -303,7 +303,7 @@ class MS_ConvBlock(nn.Module):
         # self.lif1(x)
         # x = x_feat + x
         x = self.lif2(x).flatten(0,1)
-        x2 = self.conv2_1(x)
+        # x2 = self.conv2_1(x)
         x = self.bn2(self.conv2(x)).reshape(T, B, C, -1)
         # x = x.reshape(T, B, C, N)
         # self.lif2(x)
