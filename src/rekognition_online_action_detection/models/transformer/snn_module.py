@@ -332,72 +332,8 @@ class ConvBN(torch.nn.Sequential):
             # torch.nn.init.constant_(self.bn.bias, 0)
 
 
-class MS_Star_Block(nn.Module):
-    def __init__(self, dim, mlp_ratio=3, drop_path=0.2):
-        super().__init__()
-        self.dwconv = ConvBN(dim, dim, 7, 1, (7 - 1) // 2, groups=dim, with_bn=True)
-        self.lif1 = MultiStepLIFNode(tau=2.0, detach_reset=True, backend="cupy")
-        self.f1 = ConvBN(dim, mlp_ratio * dim, 1, with_bn=False)
-        self.f2 = ConvBN(dim, mlp_ratio * dim, 1, with_bn=False)
-        self.g = ConvBN(mlp_ratio * dim, dim, 1, with_bn=True)
-        self.dwconv2 = ConvBN(dim, dim, 7, 1, (7 - 1) // 2, groups=dim, with_bn=False)
-        self.act = nn.ReLU6()
-        # self.act = MultiStepLIFNode(tau=2.0, detach_reset=True, backend="cupy")
-        self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
 
-    def forward(self, x):
-        input = x
-        T,B,C,N = x.shape
 
-        x = self.lif1(x)
-        x = self.dwconv(x.flatten(0,1))
-        x1, x2 = self.f1(x), self.f2(x)
-        # x1 = x1.reshape(T,B,C,N)
-        x = self.act(x1) * x2
-        x = self.dwconv2(self.g(x))
-        x = input + self.drop_path(x).reshape(T,B,C,N)
-        return x
-class MS_ConvBlock_T(nn.Module):
-    def __init__(
-        self,
-        in_channel,
-        out_channel,
-        mlp_ratio=4.0,
-    ):
-        super().__init__()
-
-        self.Conv = SepConv(dim=in_channel)
-        # self.Conv = MHMC(dim=dim)
-
-        self.lif1 = MultiStepLIFNode(tau=2.0, detach_reset=True, backend="cupy")
-        self.conv1 = nn.Conv1d(
-            in_channel, in_channel * mlp_ratio, kernel_size=3, padding=1, groups=1, bias=False
-        )
-        # self.conv1 = RepConv(dim, dim*mlp_ratio)
-        self.bn1 = nn.BatchNorm1d(in_channel * mlp_ratio)  # 这里可以进行改进
-        self.lif2 = MultiStepLIFNode(tau=2.0, detach_reset=True, backend="cupy")
-        self.conv2 = nn.Conv1d(
-            in_channel * mlp_ratio, out_channel, kernel_size=3, padding=1, groups=1, bias=False
-        )
-        # self.conv2 = RepConv(dim*mlp_ratio, dim)
-        self.bn2 = nn.BatchNorm1d(out_channel)  # 这里可以进行改进
-
-    def forward(self, x):
-        T, B, C, N = x.shape
-
-        x = self.Conv(x) + x
-        x_feat = x
-        # x = self.bn1(self.conv1(self.lif1(x).flatten(0, 1))).reshape(T, B, 4 * C, N)
-        x = self.bn1(self.conv1(x.flatten(0, 1))).reshape(T, B, 4 * C, N)
-        self.lif1(x)
-        # print(x.shape)
-        # x = self.bn2(self.conv2(self.lif2(x).flatten(0, 1))).reshape(T, B, C, N)
-        x = self.bn2(self.conv2(x.flatten(0, 1))).reshape(T, B, C, N)
-        self.lif2(x)
-
-        x = x_feat + x
-
-        return x
 
 class MS_MLP(nn.Module):
     def __init__(
@@ -596,7 +532,8 @@ class MS_Attention_RepConv_qkv_id(nn.Module):
         # N = H * W
         x = q
         # x = self.head_lif(q)
-
+        # macac_calculator.mac_count += 3 * q.size(1) * q.size(1) * q.size(-1)  # QKV投影
+        # macac_calculator.mac_count += 2 * q.size(1) * q.size(-1) * q.size(-1)  # 注意力矩阵
         q = self.q_conv(x.flatten(0, 1)).reshape(T, B, C, N)
         k = self.k_conv(k.flatten(0, 1)).reshape(T, B, C, -1)
         # print(k.shape)
