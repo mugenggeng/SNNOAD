@@ -94,11 +94,17 @@ class MACACCalculator:
         # 注册所有卷积和全连接层的钩子
         for name, layer in model.named_modules():
             if isinstance(layer, (nn.Conv1d, nn.Linear)):
+                print('11111111111')
                 self.hooks.append(layer.register_forward_hook(self._compute_ops))
+                print('222222222')
             elif isinstance(layer, (nn.BatchNorm1d, nn.LayerNorm)):
+                print('33333333')
                 self.hooks.append(layer.register_forward_hook(self._compute_bn_ops))
+                print('4444444444')
             elif 'LIF' in str(type(layer)):  # 脉冲神经元特殊处理
+                print('555555555')
                 self.hooks.append(layer.register_forward_hook(self._compute_lif_ops))
+                print('666666666')
 
     def _compute_ops(self, module, input, output):
         # 卷积/全连接层MAC计算
