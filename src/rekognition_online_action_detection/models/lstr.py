@@ -1449,7 +1449,7 @@ class LSTR(nn.Module):
         # print(self.T)
         if hasattr(self, 'T'):
             if epoch < 10:
-                self.T = 4
+                self.T = 16
             elif epoch < 20:
                 self.T = 8
             else:
