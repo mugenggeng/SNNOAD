@@ -124,9 +124,8 @@ def do_perframe_det_train(cfg,
         fut_log = {phase: 0.0 for phase in cfg.SOLVER.PHASES}
         det_pred_scores = []
         det_gt_targets = []
-
+        print(hasattr(model, "T"))
         if hasattr(model, "T"):
-            print('111')
             if epoch < 10:
                 model.T = 4
                 # model.set_T(4)
