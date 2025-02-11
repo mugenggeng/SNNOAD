@@ -83,6 +83,47 @@ def cost_func(a, b, p=2, metric='cosine'):
             M = 1 - torch.mm(x_norm, y_norm.transpose(0, 1))
         M = pow(M, p)
         return M
+
+
+class MACACCalculator:
+    def __init__(self, model):
+        self.mac_count = 0
+        self.ac_count = 0
+        self.hooks = []
+
+        # 注册所有卷积和全连接层的钩子
+        for name, layer in model.named_modules():
+            if isinstance(layer, (nn.Conv1d, nn.Linear)):
+                self.hooks.append(layer.register_forward_hook(self._compute_ops))
+            elif isinstance(layer, (nn.BatchNorm1d, nn.LayerNorm)):
+                self.hooks.append(layer.register_forward_hook(self._compute_bn_ops))
+            elif 'LIF' in str(type(layer)):  # 脉冲神经元特殊处理
+                self.hooks.append(layer.register_forward_hook(self._compute_lif_ops))
+
+    def _compute_ops(self, module, input, output):
+        # 卷积/全连接层MAC计算
+        if isinstance(module, nn.Conv1d):
+            mac = input[0].size(1) * output.size(1) * module.kernel_size[0] * output.size(-1)
+        elif isinstance(module, nn.Linear):
+            mac = input[0].size(1) * output.size(1)
+
+        self.mac_count += mac * input[0].size(0)  # Batch size
+
+    def _compute_bn_ops(self, module, input, output):
+        # BatchNorm的AC计算（2次加法/神经元）
+        self.ac_count += 2 * input[0].numel()
+
+    def _compute_lif_ops(self, module, output):
+        # LIF神经元的AC计算（3次加法/神经元/时间步）
+        spike_count = (output > 0).float().sum()
+        self.ac_count += 3 * spike_count.item()
+
+    def reset(self):
+        self.mac_count = 0
+        self.ac_count = 0
+
+    def get_counts(self):
+        return self.mac_count, self.ac_count
 def Geomloss(pred,target):
     metric = 'cosine'
     entreg = .1
@@ -115,7 +156,7 @@ def do_perframe_det_train(cfg,
     print('Number of parameter: % .4fM' % (total / 1e6))
 
     # scaler = GradScaler()
-
+    macac_calculator = MACACCalculator(model)
     for epoch in range(cfg.SOLVER.START_EPOCH, cfg.SOLVER.START_EPOCH + cfg.SOLVER.NUM_EPOCHS):
         # Reset
         det_losses = {phase: 0.0 for phase in cfg.SOLVER.PHASES}
@@ -146,6 +187,7 @@ def do_perframe_det_train(cfg,
                 pbar = tqdm(data_loaders[phase],
                             desc='{}ing epoch {}'.format(phase.capitalize(), epoch))
                 for batch_idx, data in enumerate(pbar, start=1):
+                    macac_calculator.reset()
                     batch_size = data[0].shape[0]
                     # print(batch_size,'batch_size')
                     # print(cfg.MODEL.LSTR.FUTURE_NUM_SAMPLES)
@@ -175,6 +217,8 @@ def do_perframe_det_train(cfg,
                         # # print(model.device_ids,'model.device_ids')
 
                         det_scores, fut_scores,feature_SW,feature_SF = model(*[x.to(device) for x in data[:-1]],epoch)
+                        batch_mac, batch_ac = macac_calculator.get_counts()
+                        print(batch_mac,batch_ac)
                         if training:
                             _,feature_TW,feature_TF = teach_model(*[x.to(device) for x in data[:-1]],epoch=epoch)
                             # print(feature_SW[0].shape,feature_TW[0].shape)
