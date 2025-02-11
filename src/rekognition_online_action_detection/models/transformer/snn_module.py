@@ -259,10 +259,10 @@ class MS_ConvBlock(nn.Module):
 
         # self.Conv = SepConv(dim=dim)
         # self.Conv = MHMC(dim=dim)
-        self.temporal_proj = nn.Conv1d(
-            dim, dim, kernel_size=1, padding=0, groups=1, bias=bias
-        ) # 新增时序投影
-        self.temporal_norm = nn.BatchNorm1d(dim)
+        # self.temporal_proj = nn.Conv1d(
+        #     dim, dim, kernel_size=1, padding=0, groups=1, bias=bias
+        # ) # 新增时序投影
+        # self.temporal_norm = nn.BatchNorm1d(dim)
         self.mlp_ratio=mlp_ratio
         self.lif1 = MultiStepLIFNode(tau=2.0, detach_reset=True, backend="cupy")
         # self.lif1 = neuron.LIFNode(tau=2.0, v_threshold=1.0,
@@ -293,9 +293,9 @@ class MS_ConvBlock(nn.Module):
 
     def forward(self, x):
         T, B, C, N = x.shape
-        if hasattr(self, 'prev_state'):
-            x = self.temporal_norm(self.temporal_proj(self.prev_state.flatten(0,1))).reshape(T, B, C, -1)
-            x = x + 0.5 * x
+        # if hasattr(self, 'prev_state'):
+        #     x = self.temporal_norm(self.temporal_proj(self.prev_state.flatten(0,1))).reshape(T, B, C, -1)
+        #     x = x + 0.5 * x
         # x = self.Conv(x) + x
         x_feat = x
         # print(x.shape)
@@ -318,7 +318,7 @@ class MS_ConvBlock(nn.Module):
         # print(x.shape)
         x = x_feat + x
 
-        self.prev_state = x.detach()  #
+        # self.prev_state = x.detach()  #
 
         return x
 
