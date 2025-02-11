@@ -1132,7 +1132,7 @@ class LSTR(nn.Module):
                  num_heads=4,
                  mlp_ratios=1,
                  depths=1,
-                 T=4,
+                 T=1,
                  times=4,
                  in_channels =1024,
                  qkv_bias=False,
@@ -1445,6 +1445,7 @@ class LSTR(nn.Module):
     def forward(self, visual_inputs, motion_inputs, memory_key_padding_mask=None,epoch=1):
         # print(visual_inputs.shape,motion_inputs.shape)
         # print(self.long_memory_num_samples)
+        print(self.T)
         feature_SW = list()
         feature_SF = list()
         if visual_inputs.dim() != 4:
