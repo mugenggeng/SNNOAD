@@ -187,7 +187,7 @@ def do_perframe_det_train(cfg,
                 pbar = tqdm(data_loaders[phase],
                             desc='{}ing epoch {}'.format(phase.capitalize(), epoch))
                 for batch_idx, data in enumerate(pbar, start=1):
-                    macac_calculator.reset()
+                    # macac_calculator.reset()
                     batch_size = data[0].shape[0]
                     # print(batch_size,'batch_size')
                     # print(cfg.MODEL.LSTR.FUTURE_NUM_SAMPLES)
