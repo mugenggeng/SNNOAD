@@ -125,15 +125,15 @@ def do_perframe_det_train(cfg,
         det_pred_scores = []
         det_gt_targets = []
         # print(model)
-        # print(hasattr(model, 'T'))
-        # if setattr(model, "T"):
-        if epoch < 10:
-            setattr(model, "T",4)
-                # model.set_T(4)
-        elif epoch < 20:
-            setattr(model, "T",8)
-        else:
-            setattr(model, "T",16)
+        print(hasattr(model, "set_T"))
+        if hasattr(model, "set_T"):
+            if epoch < 10:
+                setattr(model, "T",4)
+                    # model.set_T(4)
+            elif epoch < 20:
+                setattr(model, "T",8)
+            else:
+                setattr(model, "T",16)
 
         start = time.time()
         for phase in cfg.SOLVER.PHASES:
