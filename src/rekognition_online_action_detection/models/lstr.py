@@ -1124,8 +1124,6 @@ def fft_to_continuous(p, N):
     P = torch.fft.fft(p) / N  # 执行傅里叶变换并归一化
 
     return n, freq, torch.abs(P)
-
-@registry.register('LSTR')
 class LSTR(nn.Module):
 
     def __init__(self, cfg,
@@ -1175,8 +1173,8 @@ class LSTR(nn.Module):
         dpr = [
             x.item() for x in torch.linspace(0, drop_path_rate, len(embed_dim))
         ]  # stochastic depth decay rule
-        def set_T (netT):
-            self.T = netT
+        # def set_T (netT):
+        #     self.T = netT
         self.downsample1_1 = MS_DownSampling(
             in_channels=in_channels,
             embed_dims=embed_dim[0] // 2,
@@ -1597,7 +1595,7 @@ class LSTR(nn.Module):
             # print(x.shape)
             work_score = self.classifier(work.permute(0, 2, 1))
             return work_score
-
+@registry.register('LSTR')
 class LSTRStream(LSTR):
 
     def __init__(self, cfg):
