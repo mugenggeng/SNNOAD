@@ -1446,7 +1446,7 @@ class LSTR(nn.Module):
     def forward(self, visual_inputs, motion_inputs, memory_key_padding_mask=None,epoch=1):
         # print(visual_inputs.shape,motion_inputs.shape)
         # print(self.long_memory_num_samples)
-        print(self.T)
+        # print(self.T)
         feature_SW = list()
         feature_SF = list()
         if visual_inputs.dim() != 4:
