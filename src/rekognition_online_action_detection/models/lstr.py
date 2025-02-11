@@ -12,7 +12,7 @@ from .transformer.layers import Conv3x3, Conv1x1, LIF, PLIF, BN, Linear, Spiking
 from  . import transformer as tr
 from scipy.fft import fft, fftshift, ifft
 from .models import META_ARCHITECTURES as registry
-from .transformer.snn_module import MS_DownSampling,MS_ConvBlock,MS_Block, MS_ConvBlock_T,CGAFusion_SNN,MS_Star_Block,MS_Block_Cross_Weight,MS_Block_Cross_No_Weight
+from .transformer.snn_module import MS_DownSampling,MS_ConvBlock,MS_Block ,CGAFusion_SNN,MS_Block_Cross_Weight,MS_Block_Cross_No_Weight
 from spikingjelly.activation_based import layer
 from typing import Any, List, Mapping
 from .feature_head import build_feature_head
