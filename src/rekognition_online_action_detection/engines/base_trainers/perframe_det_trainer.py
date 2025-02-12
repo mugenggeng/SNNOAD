@@ -232,11 +232,13 @@ def do_perframe_det_train(cfg,
 
                         det_scores, fut_scores,feature_SW,feature_SF = model(*[x.to(device) for x in data[:-1]],epoch)
                         batch_mac, batch_ac = macac_calculator.get_counts()
-                        batch_mac1, batch_ac1 = macac_calculator1.get_counts()
+
                         print(batch_mac,batch_ac)
-                        print(batch_mac1,batch_ac1)
+
                         if training:
                             _,feature_TW,feature_TF = teach_model(*[x.to(device) for x in data[:-1]],epoch=epoch)
+                            batch_mac1, batch_ac1 = macac_calculator1.get_counts()
+                            print(batch_mac1, batch_ac1)
                             # print(feature_SW[0].shape,feature_TW[0].shape)
                             # brd_loss_w = brdloss(feature_SW[0], feature_TW[0].permute(1,2,0))
                             geomloss_w = Geomloss(feature_SW[0], feature_TW[0].permute(1,2,0))
