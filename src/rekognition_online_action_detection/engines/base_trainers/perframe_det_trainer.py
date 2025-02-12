@@ -109,7 +109,8 @@ class MACACCalculator:
             # [T, B, C_in, L_in] -> [T, B, C_out, L_out]
             print(type(input))
             print(input[0].shape)
-            T, B, C_in, L_in = input[0].shape
+            T_B, C_in, L_in = input[0].shape
+            T ,B = 4, T_B//4
             C_out = module.out_channels
             L_out = output.shape[-1]
             self.mac_count += C_in * C_out * module.kernel_size[0] * L_out * T * B
