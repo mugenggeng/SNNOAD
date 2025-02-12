@@ -2,7 +2,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
 
-
+from spikingjelly.clock_driven.neuron import (
+    MultiStepParametricLIFNode,
+    MultiStepLIFNode,
+)
 import time
 import os.path as osp
 import numpy as np
@@ -91,38 +94,38 @@ class MACACCalculator:
         self.ac_count = 0
         self.hooks = []
 
-        # 注册所有卷积和全连接层的钩子
+        # 注册所有卷积、全连接和LIF层的钩子
         for name, layer in model.named_modules():
             if isinstance(layer, (nn.Conv1d, nn.Linear)):
-                print('11111111111')
                 self.hooks.append(layer.register_forward_hook(self._compute_ops))
-                print('222222222')
             elif isinstance(layer, (nn.BatchNorm1d, nn.LayerNorm)):
-                print('33333333')
                 self.hooks.append(layer.register_forward_hook(self._compute_bn_ops))
-                print('4444444444')
-            elif 'LIF' in str(type(layer)):  # 脉冲神经元特殊处理
-                print('555555555')
+            elif isinstance(layer, (MultiStepLIFNode, LIFLayer)):  # 明确的LIF类型检查
                 self.hooks.append(layer.register_forward_hook(self._compute_lif_ops))
-                print('666666666')
 
     def _compute_ops(self, module, input, output):
-        # 卷积/全连接层MAC计算
+        """处理卷积/全连接层的MAC计算"""
         if isinstance(module, nn.Conv1d):
-            mac = input[0].size(1) * output.size(1) * module.kernel_size[0] * output.size(-1)
+            # [T, B, C_in, L_in] -> [T, B, C_out, L_out]
+            T, B, C_in, L_in = input[0].shape
+            C_out = module.out_channels
+            L_out = output.shape[-1]
+            self.mac_count += C_in * C_out * module.kernel_size[0] * L_out * T * B
         elif isinstance(module, nn.Linear):
-            mac = input[0].size(1) * output.size(1)
-
-        self.mac_count += mac * input[0].size(0)  # Batch size
+            T, B, C_in = input[0].shape[0], input[0].shape[1], input[0].shape[2]
+            C_out = module.out_features
+            self.mac_count += C_in * C_out * T * B
 
     def _compute_bn_ops(self, module, input, output):
-        # BatchNorm的AC计算（2次加法/神经元）
+        """处理BatchNorm的AC计算"""
+        # [T, B, C, L] -> 每个元素有2次加法（平移和缩放）
         self.ac_count += 2 * input[0].numel()
 
-    def _compute_lif_ops(self, module, output):
-        # LIF神经元的AC计算（3次加法/神经元/时间步）
-        spike_count = (output > 0).float().sum()
-        self.ac_count += 3 * spike_count.item()
+    def _compute_lif_ops(self, module, input, output):
+        """修复后的LIF神经元AC计算"""
+        # output形状: [T, B, C, L]
+        spike_count = (output > 0).float().sum().item()
+        self.ac_count += 3 * spike_count  # 3次加法/脉冲
 
     def reset(self):
         self.mac_count = 0
