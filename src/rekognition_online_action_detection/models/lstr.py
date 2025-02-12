@@ -1133,7 +1133,7 @@ class LSTR(nn.Module):
                  mlp_ratios=1,
                  depths=1,
                  T=4,
-                 times=4,
+                 times=1,
                  in_channels =1024,
                  qkv_bias=False,
                  qk_scale=None,
