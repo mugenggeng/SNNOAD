@@ -107,6 +107,8 @@ class MACACCalculator:
         """处理卷积/全连接层的MAC计算"""
         if isinstance(module, nn.Conv1d):
             # [T, B, C_in, L_in] -> [T, B, C_out, L_out]
+            print(type(input))
+            print(input[0].shape)
             T, B, C_in, L_in = input[0].shape
             C_out = module.out_channels
             L_out = output.shape[-1]
