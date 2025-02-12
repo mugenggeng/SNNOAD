@@ -53,7 +53,7 @@ SOLVER:
     SCHEDULER_NAME: 'warmup_cosine'
 #    WARMUP_FACTOR: 0.9
     WARMUP_FACTOR: 0.3
-    WARMUP_EPOCHS: 10.0
+    WARMUP_EPOCHS: 20.0
     WARMUP_METHOD: 'linear'
 
 OUTPUT_DIR: /home/dx/data/houlin/RGB_Only_checkpoints/
