@@ -1447,13 +1447,13 @@ class LSTR(nn.Module):
         # print(visual_inputs.shape,motion_inputs.shape)
         # print(self.long_memory_num_samples)
         # print(self.T)
-        if hasattr(self, 'T'):
-            if epoch < 10:
-                self.T = 4
-            elif epoch < 20:
-                self.T = 8
-            else:
-                self.T = 16
+        # if hasattr(self, 'T'):
+        #     if epoch < 10:
+        #         self.T = 4
+        #     elif epoch < 20:
+        #         self.T = 8
+        #     else:
+        #         self.T = 16
 
         feature_SW = list()
         feature_SF = list()
