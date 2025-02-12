@@ -168,8 +168,8 @@ def do_perframe_det_train(cfg,
     print('Number of parameter: % .4fM' % (total / 1e6))
 
     # scaler = GradScaler()
-    macac_calculator = MACACCalculator(model)
-    macac_calculator1 = MACACCalculator(teach_model)
+    # macac_calculator = MACACCalculator(model)
+    # macac_calculator1 = MACACCalculator(teach_model)
     for epoch in range(cfg.SOLVER.START_EPOCH, cfg.SOLVER.START_EPOCH + cfg.SOLVER.NUM_EPOCHS):
         # Reset
         det_losses = {phase: 0.0 for phase in cfg.SOLVER.PHASES}
@@ -200,8 +200,8 @@ def do_perframe_det_train(cfg,
                 pbar = tqdm(data_loaders[phase],
                             desc='{}ing epoch {}'.format(phase.capitalize(), epoch))
                 for batch_idx, data in enumerate(pbar, start=1):
-                    macac_calculator.reset()
-                    macac_calculator1.reset()
+                    # macac_calculator.reset()
+                    # macac_calculator1.reset()
                     batch_size = data[0].shape[0]
                     # print(batch_size,'batch_size')
                     # print(cfg.MODEL.LSTR.FUTURE_NUM_SAMPLES)
@@ -231,14 +231,14 @@ def do_perframe_det_train(cfg,
                         # # print(model.device_ids,'model.device_ids')
 
                         det_scores, fut_scores,feature_SW,feature_SF = model(*[x.to(device) for x in data[:-1]],epoch)
-                        batch_mac, batch_ac = macac_calculator.get_counts()
+                        # batch_mac, batch_ac = macac_calculator.get_counts()
 
-                        print(batch_mac,batch_ac)
+                        # print(batch_mac,batch_ac)
 
                         if training:
                             _,feature_TW,feature_TF = teach_model(*[x.to(device) for x in data[:-1]],epoch=epoch)
-                            batch_mac1, batch_ac1 = macac_calculator1.get_counts()
-                            print(batch_mac1, batch_ac1)
+                            # batch_mac1, batch_ac1 = macac_calculator1.get_counts()
+                            # print(batch_mac1, batch_ac1)
                             # print(feature_SW[0].shape,feature_TW[0].shape)
                             # brd_loss_w = brdloss(feature_SW[0], feature_TW[0].permute(1,2,0))
                             geomloss_w = Geomloss(feature_SW[0], feature_TW[0].permute(1,2,0))
