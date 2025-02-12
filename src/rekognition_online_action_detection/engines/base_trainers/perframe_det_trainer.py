@@ -100,7 +100,7 @@ class MACACCalculator:
                 self.hooks.append(layer.register_forward_hook(self._compute_ops))
             elif isinstance(layer, (nn.BatchNorm1d, nn.LayerNorm)):
                 self.hooks.append(layer.register_forward_hook(self._compute_bn_ops))
-            elif isinstance(layer, (MultiStepLIFNode, LIFLayer)):  # 明确的LIF类型检查
+            elif isinstance(layer, (MultiStepLIFNode)):  # 明确的LIF类型检查
                 self.hooks.append(layer.register_forward_hook(self._compute_lif_ops))
 
     def _compute_ops(self, module, input, output):
