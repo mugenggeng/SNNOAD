@@ -87,8 +87,12 @@ def build_optimizer(cfg, model):
             lr=cfg.SOLVER.BASE_LR, alpha=0.9, eps=1e-6
         )
     elif cfg.SOLVER.OPTIMIZER == 'adam':
+        param_dict = [
+            {"params": [p for n, p in model.named_parameters() if "norm" in n], "weight_decay": 0},  # 归一化层不衰减
+            {"params": [p for n, p in model.named_parameters() if "norm" not in n], "weight_decay": cfg.SOLVER.WEIGHT_DECAY}
+        ]
         optimizer = optim.Adam(
-            [{'params': model.parameters(), 'initial_lr': cfg.SOLVER.BASE_LR}],
+            [{'params': param_dict, 'initial_lr': cfg.SOLVER.BASE_LR}],
             lr=cfg.SOLVER.BASE_LR, weight_decay=cfg.SOLVER.WEIGHT_DECAY
         )
     elif cfg.SOLVER.OPTIMIZER == 'adamw':
