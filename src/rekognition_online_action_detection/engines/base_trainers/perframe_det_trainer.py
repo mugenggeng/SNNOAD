@@ -146,6 +146,13 @@ def Geomloss(pred,target):
         blur=entreg**(1/p), backend='tensorized')
     # pW = OTLoss(a, b)
     return OTLoss(pred, target).sum(0)
+def track_weight_update(model, prev_params):
+    updates = []
+    for (name, param), prev in zip(model.named_parameters(), prev_params):
+        if param.requires_grad and param.grad is not None:
+            update_ratio = (param.data - prev).abs().mean() / (param.abs().mean() + 1e-7)
+            updates.append(update_ratio.item())
+    return np.mean(updates)
 def do_perframe_det_train(cfg,
                           data_loaders,
                           model,
@@ -257,34 +264,13 @@ def do_perframe_det_train(cfg,
                             loss_dist_logits_F = distill_weight * get_logits_loss(feature_TF[-1], feature_SF[-1],
                                                                                   fut_target,
                                                                                   temp, cfg.DATA.NUM_CLASSES)
-                            # loss_dist_W = brd_loss_w + loss_dist_logits_W * 0.5
-                            # loss_dist_F = brd_loss_f + loss_dist_logits_F * 0.5
-                            # loss_TW = loss_dist_F+loss_dist_W
-                            # loss_TW = brd_loss_w + brd_loss_f + geomloss
-                            # print(loss_dist_logits_W ,loss_dist_logits_F , geomloss_w , geomloss_f)
-                            loss_TW = loss_dist_logits_W + loss_dist_logits_F + geomloss_w + geomloss_f
-                            # print(loss_dist_logits_W  + loss_dist_logits_F,geomloss_w + geomloss_f)
-                            # print(loss_TW,loss_dist_F,loss_dist_W,'loss_TW,loss_dist_T,loss_dist_W')
-                            # print(brd_loss_w,loss_dist_logits_W,'brd_loss_w,loss_dist_logits_')
-                            # print(brd_loss_f,loss_dist_logits_F,'brd_loss_f,loss_dist_logits_F')
-                        # print(feature_T)
-                        # print(det_scores.shape,fut_scores.shape)
-                        # det_scores = det_scores.permute(1,0,2,3)
-                        # fut_scores = fut_scores.permute(1,0,2,3)
-                        # loss_dist_feat = losses(feature[0], feature_T[0])
-                        # loss_dist_logits = distill_weight * get_logits_loss(feature_T[-1], feature[-1], target, temp,
-                        #                                                     num_classes)
-                        # loss_dist = loss_dist_logits + loss_dist_feat
 
-                        # print(brd_loss)
+                            loss_TW = loss_dist_logits_W + loss_dist_logits_F + geomloss_w + geomloss_f
+
                         for i, det_score in enumerate(det_scores):
-                            # print(det_score.shape,'det_score.shape')
+
                             det_score = det_score.reshape(-1, cfg.DATA.NUM_CLASSES)
-                            # print(det_score.shape)
-                            # print(det_target.shape)
-                            # det_loss = 0.7* criterion['MCE'](det_score, det_target)
-                            # print(det_target.shape,det_score.shape)
-                            # print(i)
+
                             if i == 0:
                                 det_loss = 0.2 * criterion['MCE'](det_score, det_target)
                             else:
@@ -306,12 +292,8 @@ def do_perframe_det_train(cfg,
                         fut_losses[phase] += fut_loss.item() * batch_size
                         fut_log[phase] += fut_loss
                         det_loss += fut_loss
-                    # if training:
-                        # print(brd_loss)
-                    # print(det_loss,loss_TW)
                     det_loss += loss_TW
-                        # print(det_loss)
-                    # Output log for current batch
+
                     pbar.set_postfix({
                         'lr': '{:.7f}'.format(scheduler.get_last_lr()[0]),
                         'det_loss': '{:.5f}'.format(det_loss.item()),
@@ -321,21 +303,34 @@ def do_perframe_det_train(cfg,
                         optimizer.zero_grad()
 
                         det_loss.backward()
-                        # for name, param in model.named_parameters():
-                        #     if param.grad is None:
-                        #         print(name)
 
-                        # print(N,batch_idx,'batch_idx')
-                        # scaler.scale(det_loss).backward()
-                        # scaler.step(optimizer)
-                        # scaler.update()
-                        clip_value = 10.0  # 设置裁剪阈值
-                        torch.nn.utils.clip_grad_norm_(model.parameters(), clip_value)
+                        total_grad = 0
+                        valid_layers = 0
+                        for name, param in model.named_parameters():
+                            if param.grad is not None and 'weight' in name:
+                                layer_grad = param.grad.abs().mean().item()
+                                total_grad += layer_grad
+                                valid_layers += 1
+                                if layer_grad < 1e-5:
+                                    print(f"警告：{name} 层出现梯度消失 ({layer_grad:.2e})")
+
+                        avg_grad = total_grad / valid_layers
+                        logger.info(f"平均梯度量级：{avg_grad:.2e}")
+
+                        # 梯度裁剪策略优化
+                        max_norm = 10.0 if epoch < cfg.SOLVER.WARMUP_EPOCHS else 1.0
+                        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm)
+
+                        # clip_value = 10.0  # 设置裁剪阈值
+                        # torch.nn.utils.clip_grad_norm_(model.parameters(), clip_value)
                         # for name, param in model.named_parameters():
                         #     if 'classifier' in name:
                         #         # print('111')
                         #         torch.nn.utils.clip_grad_norm_(param, 10.0)
+                        prev_params = [p.clone().detach() for p in model.parameters()]
                         optimizer.step()
+                        update_ratio = track_weight_update(model, prev_params)
+                        logger.info(f"权重更新比率：{update_ratio:.2e}")
                         ema.update()
                         scheduler.step()
 
