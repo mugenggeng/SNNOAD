@@ -318,11 +318,11 @@ def do_perframe_det_train(cfg,
                         logger.info(f"平均梯度量级：{avg_grad:.2e}")
 
                         # 梯度裁剪策略优化
-                        max_norm = 10.0 if epoch < cfg.SOLVER.SCHEDULER.WARMUP_EPOCHS else 1.0
-                        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm)
+                        # max_norm = 10.0 if epoch < cfg.SOLVER.SCHEDULER.WARMUP_EPOCHS else 1.0
+                        # torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm)
 
-                        # clip_value = 10.0  # 设置裁剪阈值
-                        # torch.nn.utils.clip_grad_norm_(model.parameters(), clip_value)
+                        clip_value = 10.0  # 设置裁剪阈值
+                        torch.nn.utils.clip_grad_norm_(model.parameters(), clip_value)
                         # for name, param in model.named_parameters():
                         #     if 'classifier' in name:
                         #         # print('111')
