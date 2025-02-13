@@ -318,7 +318,7 @@ def do_perframe_det_train(cfg,
                         logger.info(f"平均梯度量级：{avg_grad:.2e}")
 
                         # 梯度裁剪策略优化
-                        max_norm = 10.0 if epoch < cfg.SOLVER.WARMUP_EPOCHS else 1.0
+                        max_norm = 10.0 if epoch < 10 else 1.0
                         torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm)
 
                         # clip_value = 10.0  # 设置裁剪阈值
