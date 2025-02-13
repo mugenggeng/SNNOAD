@@ -155,9 +155,7 @@ class RepConv(nn.Module):
         bias=False,
     ):
         super().__init__()
-        # hidden_channel = in_channel
-        # conv1x1 = Dcls1d(in_channel, in_channel, kernel_count=1, groups=1, padding=0, dilated_kernel_size=1,
-        #        bias=False, version='gauss')
+
         conv1x1 = nn.Conv1d(in_channel, in_channel, 1, 1, 0, bias=False, groups=1)
         bn = BNAndPadLayer(pad_pixels=1, num_features=in_channel)
         conv3x3 = nn.Sequential(
@@ -165,18 +163,12 @@ class RepConv(nn.Module):
             nn.Conv1d(in_channel, out_channel, 1, 1, 0, groups=1, bias=False),
             nn.BatchNorm1d(out_channel),
         )
-        # conv3x3 = nn.Sequential(
-        #     Dcls1d(in_channel, in_channel, kernel_count=1, groups=in_channel, padding=0, dilated_kernel_size=3,
-        #            bias=False, version='gauss'),
-        # Dcls1d(in_channel, in_channel, kernel_count=1, groups=1, padding=0, dilated_kernel_size=1,
-        #        bias=False, version='gauss'),
-        #     nn.BatchNorm1d(out_channel),
-        # )
+        self.shortcut = nn.Conv1d(in_channel, out_channel, 1) if in_channel != out_channel else nn.Identity()
 
         self.body = nn.Sequential(conv1x1, bn, conv3x3)
 
     def forward(self, x):
-        return self.body(x)
+        return self.body(x) + self.shortcut(x)
 
 
 class SepConv(nn.Module):
@@ -223,27 +215,7 @@ class SepConv(nn.Module):
 
 
         return x
-class MultiScaleStepLIFNode(nn.Module):
-    def __init__(
-            self,
-            tau=2.0,
-            detach_reset=True,
-            backend="cupy",
-            radio=[0.25,0.50,0.75,1.0]
-    ):
-        super().__init__()
-        self.scale = len(radio)
-        self.lif_list = nn.ModuleList()
-        for ra in radio:
-            self.lif_list.append(MultiStepLIFNode(tau=tau, detach_reset=detach_reset, backend=backend,v_threshold=ra))
 
-    def forward(self, x):
-        res = x
-        output = 0
-        for lif in self.lif_list:
-            output += lif(res)
-
-        return output
 
 
 class MS_ConvBlock(nn.Module):
