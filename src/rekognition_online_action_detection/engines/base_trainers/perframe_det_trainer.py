@@ -178,6 +178,9 @@ def do_perframe_det_train(cfg,
     # scaler = GradScaler()
     # macac_calculator = MACACCalculator(model)
     # macac_calculator1 = MACACCalculator(teach_model)
+    for name, module in model.named_modules():
+        if 'block_w' in name or 'gen_layer' in name:
+            module.add_module('grad_scaler', GradScaler())
     for epoch in range(cfg.SOLVER.START_EPOCH, cfg.SOLVER.START_EPOCH + cfg.SOLVER.NUM_EPOCHS):
         # Reset
         det_losses = {phase: 0.0 for phase in cfg.SOLVER.PHASES}
@@ -317,9 +320,7 @@ def do_perframe_det_train(cfg,
 
                         avg_grad = total_grad / valid_layers
                         logger.info(f"平均梯度量级：{avg_grad:.2e}")
-                        for name, module in model.named_modules():
-                            if 'block_w' in name or 'gen_layer' in name:
-                                module.add_module('grad_scaler', GradScaler())
+
                         # 梯度裁剪策略优化
                         # max_norm = 10.0 if epoch < cfg.SOLVER.SCHEDULER.WARMUP_EPOCHS else 1.0
                         # torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm)
