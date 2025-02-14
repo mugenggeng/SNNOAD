@@ -181,50 +181,6 @@ class RepConv(nn.Module):
         return self.body(x)
 
 
-class SepConv(nn.Module):
-    r"""
-    Inverted separable convolution from MobileNetV2: https://arxiv.org/abs/1801.04381.
-    """
-
-    def __init__(
-        self,
-        dim,
-        expansion_ratio=2,
-        act2_layer=nn.Identity,
-        bias=False,
-        kernel_size=7,
-        padding=3,
-    ):
-        super().__init__()
-        med_channels = int(expansion_ratio * dim)
-        self.lif1 = MultiStepLIFNode(tau=2.0, detach_reset=True, backend="cupy")
-        # self.lif1 = mem_update()
-        self.pwconv1 = nn.Conv1d(dim, med_channels, kernel_size=1, stride=1, bias=bias)
-        self.bn1 = nn.BatchNorm1d(med_channels)
-        self.lif2 = MultiStepLIFNode(tau=2.0, detach_reset=True, backend="cupy")
-        # self.lif2 = mem_update()
-        self.dwconv = nn.Conv1d(
-            med_channels,
-            med_channels,
-            kernel_size=kernel_size,
-            padding=padding,
-            groups=med_channels,
-            bias=bias,
-        )  # depthwise conv
-        self.pwconv2 = nn.Conv1d(med_channels, dim, kernel_size=1, stride=1, bias=bias)
-        self.bn2 = nn.BatchNorm1d(dim)
-
-    def forward(self, x):
-        T, B, C, N = x.shape
-        x = self.lif1(x)
-        x = self.bn1(self.pwconv1(x.flatten(0, 1))).reshape(T, B, -1, N)
-
-        x = self.lif2(x)
-        x = self.dwconv(x.flatten(0, 1))
-        x = self.bn2(self.pwconv2(x)).reshape(T, B,  -1, N)
-
-
-        return x
 
 
 
@@ -513,13 +469,14 @@ class MS_Attention_RepConv_qkv_id(nn.Module):
         T, B, C, N = q.shape
         # N = H * W
         x = q
+        k_ = k
         # x = self.head_lif(q)
         # macac_calculator.mac_count += 3 * q.size(1) * q.size(1) * q.size(-1)  # QKV投影
         # macac_calculator.mac_count += 2 * q.size(1) * q.size(-1) * q.size(-1)  # 注意力矩阵
         q = self.q_conv(x.flatten(0, 1)).reshape(T, B, C, N)
-        k = self.k_conv(k.flatten(0, 1)).reshape(T, B, C, -1)
+        k = self.k_conv(k_.flatten(0, 1)).reshape(T, B, C, -1)
         # print(k.shape)
-        v = self.v_conv(k.flatten(0, 1)).reshape(T, B, C, -1)
+        v = self.v_conv(k_.flatten(0, 1)).reshape(T, B, C, -1)
 
         q = self.q_lif(q).flatten(3)
         q = (

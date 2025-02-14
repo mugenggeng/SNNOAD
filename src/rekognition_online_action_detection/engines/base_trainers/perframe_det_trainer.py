@@ -176,7 +176,7 @@ def do_perframe_det_train(cfg,
     print('Number of parameter: % .4fM' % (total / 1e6))
 
     # scaler = GradScaler()
-    writer = SummaryWriter(log_dir='runs/exp1')
+
     for epoch in range(cfg.SOLVER.START_EPOCH, cfg.SOLVER.START_EPOCH + cfg.SOLVER.NUM_EPOCHS):
         # Reset
         det_losses = {phase: 0.0 for phase in cfg.SOLVER.PHASES}
@@ -307,39 +307,32 @@ def do_perframe_det_train(cfg,
                         # scaler.step(optimizer)
                         # scaler.update()
 
-                        total_grad = 0
-                        valid_layers = 0
-                        for name, param in model.named_parameters():
-                            if param.grad is not None and 'weight' in name:
-                                layer_grad = param.grad.abs().mean().item()
-                                total_grad += layer_grad
-                                valid_layers += 1
-                                if layer_grad < 1e-5:
-                                    print(f"警告：{name} 层出现梯度消失 ({layer_grad:.2e})")
+                        # total_grad = 0
+                        # valid_layers = 0
+                        # for name, param in model.named_parameters():
+                        #     if param.grad is not None and 'weight' in name:
+                        #         layer_grad = param.grad.abs().mean().item()
+                        #         total_grad += layer_grad
+                        #         valid_layers += 1
+                        #         if layer_grad < 1e-5:
+                        #             print(f"警告：{name} 层出现梯度消失 ({layer_grad:.2e})")
                         # 增加梯度分布直方图记录
                         # for name, param in model.named_parameters():
                         #     if param.grad is not None:
                         #         logger.add_histogram(f'grad/{name}', param.grad, epoch)
-                        for name, param in model.named_parameters():
-                            if param.grad is not None:
-                                writer.add_histogram(f'grad/{name}', param.grad, global_step=epoch)
-                                # 同时记录权重分布
-                                writer.add_histogram(f'weight/{name}', param.data, global_step=epoch)
 
-                        # 训练结束后关闭
-
-                        avg_grad = total_grad / valid_layers
-                        logger.info(f"平均梯度量级：{avg_grad:.2e}")
+                        # avg_grad = total_grad / valid_layers
+                        # logger.info(f"平均梯度量级：{avg_grad:.2e}")
 
                         # 梯度裁剪策略优化
                         max_norm = 10.0
                         torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm)
 
 
-                        prev_params = [p.clone().detach() for p in model.parameters()]
-
-                        update_ratio = track_weight_update(model, prev_params)
-                        logger.info(f"权重更新比率：{update_ratio:.2e}")
+                        # prev_params = [p.clone().detach() for p in model.parameters()]
+                        #
+                        # update_ratio = track_weight_update(model, prev_params)
+                        # logger.info(f"权重更新比率：{update_ratio:.2e}")
                         optimizer.step()
                         ema.update()
                         scheduler.step()
@@ -354,7 +347,7 @@ def do_perframe_det_train(cfg,
                         det_pred_scores.extend(det_score)
                         det_gt_targets.extend(det_target)
         end = time.time()
-        writer.close()
+
         # Output log for current epoch
         log = []
         log.append('Epoch {:2}'.format(epoch))
