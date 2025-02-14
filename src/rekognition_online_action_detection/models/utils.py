@@ -54,24 +54,24 @@ class GradScaler(nn.Module):
             return x + (grad * self.scale_factor - grad.detach() * self.scale_factor.detach())
         return x
 
-class MinkowskiGRN(nn.Module):
-    """ GRN layer for sparse tensors.
-    """
-    def __init__(self, dim):
-        super().__init__()
-        self.gamma = nn.Parameter(torch.zeros(1, dim))
-        self.beta = nn.Parameter(torch.zeros(1, dim))
-
-    def forward(self, x):
-        cm = x.coordinate_manager
-        in_key = x.coordinate_map_key
-
-        Gx = torch.norm(x.F, p=2, dim=0, keepdim=True)
-        Nx = Gx / (Gx.mean(dim=-1, keepdim=True) + 1e-6)
-        return SparseTensor(
-                self.gamma * (x.F * Nx) + self.beta + x.F,
-                coordinate_map_key=in_key,
-                coordinate_manager=cm)
+# class MinkowskiGRN(nn.Module):
+#     """ GRN layer for sparse tensors.
+#     """
+#     def __init__(self, dim):
+#         super().__init__()
+#         self.gamma = nn.Parameter(torch.zeros(1, dim))
+#         self.beta = nn.Parameter(torch.zeros(1, dim))
+#
+#     def forward(self, x):
+#         cm = x.coordinate_manager
+#         in_key = x.coordinate_map_key
+#
+#         Gx = torch.norm(x.F, p=2, dim=0, keepdim=True)
+#         Nx = Gx / (Gx.mean(dim=-1, keepdim=True) + 1e-6)
+#         return SparseTensor(
+#                 self.gamma * (x.F * Nx) + self.beta + x.F,
+#                 coordinate_map_key=in_key,
+#                 coordinate_manager=cm)
 
 class MinkowskiDropPath(nn.Module):
     """ Drop Path for sparse tensors.
