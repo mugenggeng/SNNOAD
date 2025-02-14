@@ -444,11 +444,11 @@ class MS_Attention_RepConv_qkv_id(nn.Module):
 
         # self.head_lif = MultiStepLIFNode(tau=2.0, detach_reset=True, backend="cupy")
 
-        self.q_conv = nn.Sequential(RepConv(dim, dim, bias=False), nn.BatchNorm1d(dim))
+        self.q_conv = nn.Sequential(RepConv(dim, dim, bias=False), nn.BatchNorm1d(dim),RepConv(dim, dim, bias=False), nn.BatchNorm1d(dim))
 
-        self.k_conv = nn.Sequential(RepConv(dim, dim, bias=False), nn.BatchNorm1d(dim))
+        self.k_conv = nn.Sequential(RepConv(dim, dim, bias=False), nn.BatchNorm1d(dim),RepConv(dim, dim, bias=False), nn.BatchNorm1d(dim))
         #
-        self.v_conv = nn.Sequential(RepConv(dim, dim, bias=False), nn.BatchNorm1d(dim))
+        self.v_conv = nn.Sequential(RepConv(dim, dim, bias=False), nn.BatchNorm1d(dim),RepConv(dim, dim, bias=False), nn.BatchNorm1d(dim))
 
         self.q_lif = MultiStepLIFNode(tau=2.0, detach_reset=True, backend="cupy")
 
