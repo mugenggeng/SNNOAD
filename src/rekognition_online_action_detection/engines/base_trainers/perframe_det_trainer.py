@@ -234,8 +234,8 @@ def do_perframe_det_train(cfg,
                         # # for x in data[:-1]:
                         # #     print(x.shape)
                         # # print(model.device_ids,'model.device_ids')
-                        with autocast():
-                            det_scores, fut_scores,feature_SW,feature_SF = model(*[x.to(device) for x in data[:-1]],epoch)
+                        # with autocast():
+                        det_scores, fut_scores,feature_SW,feature_SF = model(*[x.to(device) for x in data[:-1]],epoch)
                         # batch_mac, batch_ac = macac_calculator.get_counts()
 
                         # print(batch_mac,batch_ac)
@@ -300,10 +300,10 @@ def do_perframe_det_train(cfg,
                     if training:
                         optimizer.zero_grad()
                         #
-                        # det_loss.backward()
-                        scaler.scale(det_loss).backward()
-                        scaler.step(optimizer)
-                        scaler.update()
+                        det_loss.backward()
+                        # scaler.scale(det_loss).backward()
+                        # scaler.step(optimizer)
+                        # scaler.update()
 
                         total_grad = 0
                         valid_layers = 0
@@ -322,7 +322,7 @@ def do_perframe_det_train(cfg,
                         # logger.info(f"平均梯度量级：{avg_grad:.2e}")
 
                         # 梯度裁剪策略优化
-                        max_norm = 10.0 if epoch < cfg.SOLVER.SCHEDULER.WARMUP_EPOCHS else 5.0
+                        max_norm = 10.0
                         torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm)
 
 
@@ -330,7 +330,7 @@ def do_perframe_det_train(cfg,
 
                         # update_ratio = track_weight_update(model, prev_params)
                         # logger.info(f"权重更新比率：{update_ratio:.2e}")
-                        # optimizer.step()
+                        optimizer.step()
                         ema.update()
                         scheduler.step()
 
