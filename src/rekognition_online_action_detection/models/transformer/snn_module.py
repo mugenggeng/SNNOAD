@@ -161,24 +161,24 @@ class RepConv(nn.Module):
         conv1x1 = nn.Conv1d(in_channel, in_channel, 1, 1, 0, bias=False, groups=1)
         bn = BNAndPadLayer(pad_pixels=1, num_features=in_channel)
         conv3x3 = nn.Sequential(
-            nn.Conv1d(in_channel, in_channel, 3, 1, 0, groups=in_channel//4, bias=False),
+            nn.Conv1d(in_channel, in_channel, 3, 1, 0, groups=in_channel, bias=False),
             nn.Conv1d(in_channel, out_channel, 1, 1, 0, groups=1, bias=False),
             nn.BatchNorm1d(out_channel),
         )
-        self.shortcut = nn.Conv1d(in_channel, out_channel, 1) if in_channel != out_channel else nn.Identity()
+        # self.shortcut = nn.Conv1d(in_channel, out_channel, 1) if in_channel != out_channel else nn.Identity()
 
         self.body = nn.Sequential(conv1x1, bn, conv3x3)
-        for m in self.modules():
-            if isinstance(m, nn.Conv1d):
-                if m.groups > 1:  # 深度卷积特殊初始化
-                    nn.init.normal_(m.weight, mean=0, std=0.02 / math.sqrt(m.groups))
-                else:
-                    nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='leaky_relu', a=0.1)
-                if m.bias is not None:
-                    nn.init.constant_(m.bias, 0.5)  # 偏置项非零初始化
+        # for m in self.modules():
+        #     if isinstance(m, nn.Conv1d):
+        #         if m.groups > 1:  # 深度卷积特殊初始化
+        #             nn.init.normal_(m.weight, mean=0, std=0.02 / math.sqrt(m.groups))
+        #         else:
+        #             nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='leaky_relu', a=0.1)
+        #         if m.bias is not None:
+        #             nn.init.constant_(m.bias, 0.5)  # 偏置项非零初始化
 
     def forward(self, x):
-        return self.body(x) + self.shortcut(x)
+        return self.body(x)
 
 
 class SepConv(nn.Module):
