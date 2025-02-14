@@ -19,7 +19,6 @@ from torch.cuda.amp import autocast, GradScaler
 from thop import profile
 from rekognition_online_action_detection.evaluation import compute_result
 # from torch.cuda.amp import GradScaler, autocast
-from rekognition_online_action_detection.models.utils import GradScaler
 import geomloss
 import sys
 # sys.path.append('../../../../external/')
@@ -175,12 +174,7 @@ def do_perframe_det_train(cfg,
     total = sum([param.nelement() for param in model.parameters()])
     print('Number of parameter: % .4fM' % (total / 1e6))
 
-    # scaler = GradScaler()
-    # macac_calculator = MACACCalculator(model)
-    # macac_calculator1 = MACACCalculator(teach_model)
-    for name, module in model.named_modules():
-        if 'block_w' in name or 'gen_layer' in name:
-            module.add_module('grad_scaler', GradScaler())
+    scaler = GradScaler()
     for epoch in range(cfg.SOLVER.START_EPOCH, cfg.SOLVER.START_EPOCH + cfg.SOLVER.NUM_EPOCHS):
         # Reset
         det_losses = {phase: 0.0 for phase in cfg.SOLVER.PHASES}
@@ -240,8 +234,8 @@ def do_perframe_det_train(cfg,
                         # # for x in data[:-1]:
                         # #     print(x.shape)
                         # # print(model.device_ids,'model.device_ids')
-
-                        det_scores, fut_scores,feature_SW,feature_SF = model(*[x.to(device) for x in data[:-1]],epoch)
+                        with autocast():
+                            det_scores, fut_scores,feature_SW,feature_SF = model(*[x.to(device) for x in data[:-1]],epoch)
                         # batch_mac, batch_ac = macac_calculator.get_counts()
 
                         # print(batch_mac,batch_ac)
@@ -305,8 +299,11 @@ def do_perframe_det_train(cfg,
                     # print(det_loss,batch_idx,'det_loss')
                     if training:
                         optimizer.zero_grad()
-
-                        det_loss.backward()
+                        #
+                        # det_loss.backward()
+                        scaler.scale(det_loss).backward()
+                        scaler.step(optimizer)
+                        scaler.update()
 
                         total_grad = 0
                         valid_layers = 0
@@ -317,13 +314,16 @@ def do_perframe_det_train(cfg,
                                 valid_layers += 1
                                 if layer_grad < 1e-5:
                                     print(f"警告：{name} 层出现梯度消失 ({layer_grad:.2e})")
-
+                        # 增加梯度分布直方图记录
+                        for name, param in model.named_parameters():
+                            if param.grad is not None:
+                                logger.add_histogram(f'grad/{name}', param.grad, epoch)
                         avg_grad = total_grad / valid_layers
                         logger.info(f"平均梯度量级：{avg_grad:.2e}")
 
                         # 梯度裁剪策略优化
-                        # max_norm = 10.0 if epoch < cfg.SOLVER.SCHEDULER.WARMUP_EPOCHS else 1.0
-                        # torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm)
+                        max_norm = 10.0 if epoch < cfg.SOLVER.SCHEDULER.WARMUP_EPOCHS else 5.0
+                        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm)
 
                         # clip_value = 10.0  # 设置裁剪阈值
                         # torch.nn.utils.clip_grad_norm_(model.parameters(), clip_value)
@@ -332,9 +332,10 @@ def do_perframe_det_train(cfg,
                         #         # print('111')
                         #         torch.nn.utils.clip_grad_norm_(param, 10.0)
                         prev_params = [p.clone().detach() for p in model.parameters()]
-                        optimizer.step()
+
                         update_ratio = track_weight_update(model, prev_params)
                         logger.info(f"权重更新比率：{update_ratio:.2e}")
+                        # optimizer.step()
                         ema.update()
                         scheduler.step()
 
