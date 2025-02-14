@@ -465,11 +465,11 @@ class MS_Attention_RepConv_qkv_id(nn.Module):
         )
 
         # self.logit_scale = nn.Parameter(torch.log(10 * torch.ones((num_heads, 1, 1))), requires_grad=True)
-    def forward(self, q,k):
+    def forward(self, q,k_):
         T, B, C, N = q.shape
         # N = H * W
         x = q
-        k_ = k
+        # k_ = k
         # x = self.head_lif(q)
         # macac_calculator.mac_count += 3 * q.size(1) * q.size(1) * q.size(-1)  # QKV投影
         # macac_calculator.mac_count += 2 * q.size(1) * q.size(-1) * q.size(-1)  # 注意力矩阵
