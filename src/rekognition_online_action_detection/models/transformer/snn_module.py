@@ -440,7 +440,9 @@ class MS_Attention_RepConv_qkv_id(nn.Module):
         ), f"dim {dim} should be divided by num_heads {num_heads}."
         self.dim = dim
         self.num_heads = num_heads
-        self.scale = 0.125
+        # self.scale = 0.125
+        self.scale = nn.Parameter(torch.ones(1) * 0.125, requires_grad=True)
+        self.register_buffer('eps', torch.tensor(1e-6))
 
         # self.head_lif = MultiStepLIFNode(tau=2.0, detach_reset=True, backend="cupy")
 
@@ -505,6 +507,7 @@ class MS_Attention_RepConv_qkv_id(nn.Module):
 
         x = k.transpose(-2, -1) @ v
         x = (q @ x) * self.scale
+        x=  x +self.eps
         # attn = (F.normalize(k, dim=-1).transpose(-2, -1) @ F.normalize(v, dim=-1))
         # logit_scale = torch.clamp(self.logit_scale, max=4.6052).exp()
         # attn = attn * logit_scale
