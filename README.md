@@ -142,19 +142,7 @@ There are *two kinds* of evaluation methods in our code.
         MODEL.CHECKPOINT $PATH_TO_CHECKPOINT MODEL.LSTR.INFERENCE_MODE batch
     ```
     
-## Main Results and checkpoints
 
-### THUMOS14
-
-|       method      | feature   |  mAP (%)  |                             config                                                |   checkpoint   |
-|  :--------------: |  :-------------:  |  :-----:  |  :-----------------------------------------------------------------------------:  |  :----------:  |
-|  GatedOAD           |    Kinetics    |   72.9    | [yaml](configs/THUMOS/MAT/mat_long_256_work_8_kinetics_1x.yaml)      | [Download](https://drive.google.com/file/d/1W3OlCOz4rkRq4MV_RvO8mHLzmdZrrnbF/view?usp=drive_link) |
-
-### EK100
-
-|  method  |    feature    |  verb (overall)  |  noun (overall)  |  action (overall)  |  config  |                                checkpoint                                |
-|  :----:  |  :-------------:  |  :------------:  |  :------------:  |  :--------------:  |  :----:  |  :--------------------------------------------------------------------:  |
-|  GatedOAD  |  RGB+FLOW  |      35.0      |       41.3       |        19.8        |  [yaml](configs/EK100/MAT/mat_long_64_work_5_kinetics_1x.yaml) | [Download](https://drive.google.com/file/d/1qVz1EuIZ7pUKRjn2Udq6h82xwDrHDePY/view?usp=drive_link) |
 
 ## Citations
 
