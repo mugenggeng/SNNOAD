@@ -160,12 +160,12 @@ There are *two kinds* of evaluation methods in our code.
 
 If you are using the data/code/model provided here in a publication, please cite our paper:
 ```
-@inproceedings{wang2023memory,
-               title={Memory-and-Anticipation Transformer for Online Action Understanding},
-               author={Wang, Jiahao and Chen, Guo and Huang, Yifei and Wang, Limin and Lu, Tong},
-               booktitle={Proceedings of the IEEE/CVF International Conference on Computer Vision},
-               pages={13824--13835},
-               year={2023}
+@article{wang2025knowledge,
+  title={Knowledge Distillation-Based Spiking Neural Network for Online Video Action Understanding},
+  author={Wang, Houlin and Zhang, Shihui and Han, Xueqiang and Pang, Kuo and Zhang, Qixian},
+  journal={IEEE Transactions on Industrial Informatics},
+  year={2025},
+  publisher={IEEE}
 }
 ```
 ## License
