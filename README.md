@@ -1,10 +1,10 @@
-# Memory-and-Anticipation Transformer for Online Action Understanding
+# Knowledge Distillation-Based Spiking Neural Network for Online Video Action Understanding
 
 ## Introduction
 
-This is a PyTorch implementation for our paper "`Explicit Long-term Gated Compressor for Online Action Detection and Anticipation`".
+This is a PyTorch implementation for our paper "`Knowledge Distillation-Based Spiking Neural Network for Online Video Action Understanding`".
 
-![network](demo/Framework1.png?raw=true)
+
 
 ## Environment
 
