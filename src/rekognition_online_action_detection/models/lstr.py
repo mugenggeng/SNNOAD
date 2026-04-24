@@ -247,20 +247,14 @@ class LSTR(nn.Module):
                 output = self.block_w[i](work_memories, memory)
                 # print(output.shape)
             his_memory = torch.cat([memory, output],dim=-1)
-            # enc_query = self.gen_query.weight.unsqueeze(1).unsqueeze(0).repeat(self.T, 1, his_memory.shape[1], 1).permute(0,2,3,1)
-            # fut = self.fut_layer(enc_query, his_memory)
-            # print(output.shape)
-            # print(memory.shape,output.shape)
-            # his_memory = torch.cat([memory, output,fut],dim=-1)
-            # print(his_memory.shape,'his_memory.shape')
+            
             dec_query = self.final_query.weight.unsqueeze(1).unsqueeze(0).repeat(self.T, 1, his_memory.shape[1], 1).permute(0,2,3,1)
-            # dec_query = self.gen_query.weight.unsqueeze(1).unsqueeze(0).repeat(self.T, 1, his_memory.shape[1], 1).permute(0,2,3,1)
-            # print(dec_query.shape,his_memory.shape)
+           
             future = self.gen_layer(dec_query, his_memory)
-            # future += fut
+          
             future_rep = [future]
             short_rep = [output]
-            # print(output.shape,future.shape)
+           
             return output, future
 
     def forward_features(self, x,x_2=None):
@@ -358,16 +352,7 @@ class LSTR(nn.Module):
         # return x  # T,B,C,N
 
     def forward(self, visual_inputs, motion_inputs, memory_key_padding_mask=None,epoch=1):
-        # print(visual_inputs.shape,motion_inputs.shape)
-        # print(self.long_memory_num_samples)
-        # print(self.T)
-        # if hasattr(self, 'T'):
-        #     if epoch < 10:
-        #         self.T = 4
-        #     elif epoch < 20:
-        #         self.T = 8
-        #     else:
-        #         self.T = 16
+      
 
         feature_SW = list()
         feature_SF = list()
@@ -429,89 +414,30 @@ class LSTR(nn.Module):
         else:
             #### [B, T, C, H, W] -> [T, B, C, H, W]
             x = x.transpose(0, 1)
-        # for blk in self.WorkConvBlock:
-        #     work_memories = blk(work_memories)
-        # print(work_memories_visual.shape)
-        x,x_2 = self.forward_features(x_visual, x_motion)
-        # feature_r.append(torch.cat([x,x_2],dim=2).mean(0))
-        w,w_2 = work_memories_visual,work_memories_motion
-        # w, w_2 = self.forward_features_worl(work_memories_visual,work_memories_motion)
-        # T,B,C = w.shape[0],w.shape[1],w.shape[2]
-        # print(w.shape)
-        # w =w.flatten(0,1)
-        # w_2 = w_2.flatten(0,1)
-        # w = F.interpolate(w, size=40,mode='linear').reshape(T,B,C,-1)
-        # w_2 = F.interpolate(w_2, size=40, mode='linear').reshape(T,B,C,-1)
-        # print(x.shape,w.shape)
-        # print(x.shape, w.shape,x_2.shape,w_2.shape)
+       
         work_visual, fut_visual = self.cci(x, w)
 
         work_motion, fut_motion = self.cci(x_2, w_2)
 
-        # work_visual = x
-        # work_motion = x_2
-        # for i in range(self.cci_time):
-        #
-        #     work_visual = self.work_fusions[i](work_motion,work_visual)
-        #     work_motion = self.work_fusions[i](work_visual,work_motion)
-        #
-        #     fut_visual = self.fut_fusions[i](fut_motion,fut_visual)
-        #     fut_motion = self.fut_fusions[i](fut_visual,fut_motion)
-
-        # work = self.fusion_work(work_visual,work_motion)
-        # fut = self.fusion_fut(fut_visual,fut_motion)
+       
         work = torch.cat([work_visual,work_motion], dim=2)
         fut = torch.cat([fut_visual,fut_motion],dim=2)
-        # work = work_visual
-        # fut = fut_visual
-        # T_w,B_w,C_w,N_w = work.shape
-        # work_f = work.reshape(-1,N_w)
-        # n, _, work_f = fft_to_continuous(work_f, T_w*B_w*C_w)
-        # work_f = work_f.reshape(T_w,B_w,C_w,N_w)
-        # T_f, B_f, C_f, N_f = fut.shape
-        # fut_f = fut.reshape(-1, N_f)
-        # n, _, fut_f = fft_to_continuous(fut_f, T_f * B_f * C_f)
-        # fut_f = fut_f.reshape( T_f, B_f, C_f, N_f )
-        # feature_SW.append(work.mean(0)+self.work_weight.unsqueeze(0).repeat(work_visual.shape[1],1,1))
-        # feature_SF.append(fut.mean(0)+self.fut_weight.unsqueeze(0).repeat(work_visual.shape[1],1,1))
+        
         feature_SW.append(work.mean(0))
         feature_SF.append(fut.mean(0))
         fut_scores = []
         work_scores = []
         if self.future_enabled:
-            # if self.cfg.DATA.DATA_NAME == 'EK100':
-            #     noun_score = self.classifier_noun(work.permute(0,1,3,2)).mean(0)
-            #     verb_score = self.classifier_verb(work.permute(0,1,3,2)).mean(0)
-            #     work_score = (self.classifier(self.dropout_cls(work.permute(0, 1, 3, 2)))).mean(0)
-            #
-            #     fut_noun_score = self.classifier_noun(fut.permute(0,1,3,2)).mean(0)
-            #     fut_verb_score = self.classifier_verb(fut.permute(0,1,3,2)).mean(0)
-            #     fut_score = self.classifier(fut.permute(0, 1, 3, 2)).mean(0)
-            #     return ([work_score], [fut_score], noun_score, fut_noun_score, verb_score, fut_verb_score)
-            # else:
-
-            # work_score_visual = self.classifier(work_visual.permute(0, 1, 3, 2)).mean(0)
-            # work_score_motion = self.classifier(work_motion.permute(0, 1, 3, 2)).mean(0)
-            # fut_score_visual = self.classifier(fut_visual.permute(0,1,3,2)).mean(0)
-            # fut_score_motion = self.classifier(fut_motion.permute(0, 1, 3, 2)).mean(0)
-            #
-            # work_scores.append(work_score_visual)
-            # work_scores.append(work_score_motion)
-            # fut_scores.append(fut_score_visual)
-            # fut_scores.append(fut_score_motion)
+            
             work_score = self.classifier(work.permute(0, 1, 3, 2)).mean(0)
-            # print(fut.shape)
-            # T,B,C,N = fut.shape
-
-            # fut = F.interpolate(fut.reshape(-1,C,N), size=self.future_num_samples).reshape(T,B,C,-1)
-            # print(fut.shape)
+           
             fut_score = self.classifier(fut.permute(0, 1, 3, 2)).mean(0)
             work_scores.append(work_score)
             fut_scores.append(fut_score)
 
             feature_SW.append(work_score)
             feature_SF.append(fut_score)
-            # return ([work_score],[fut_score])
+          
             return work_scores,fut_scores,feature_SW,feature_SF
         else:
             # print(x.shape)
