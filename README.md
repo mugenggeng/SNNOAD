@@ -35,9 +35,9 @@ You can directly download the pre-extracted feature (.zip) from the UTBox links 
 
 You can also try to prepare the datasets from scratch by yourself. 
 
-#### THUMOS14 and TVSeries
+#### THUMOS14 
 
-For THUMOS14 and TVSeries, please refer to [`LSTR`](https://github.com/amazon-research/long-short-term-transformer#data-preparation).
+For THUMOS14, please refer to [`LSTR`](https://github.com/amazon-research/long-short-term-transformer#data-preparation).
 
 #### EK100
 
@@ -61,21 +61,7 @@ For EK100, please find more details at [`RULSTM`](https://github.com/fpv-iplab/r
        |   ├── ...
        ```
    
-   
-   * TVSeries dataset:
-       ```
-          $YOUR_PATH_TO_TVSERIES_DATASET
-          ├── rgb_kinetics_resnet50/
-          |   ├── Breaking_Bad_ep1.npy (of size L x 2048)
-          │   ├── ...
-          ├── flow_kinetics_bninception/
-          |   ├── Breaking_Bad_ep1.npy (of size L x 1024)
-          |   ├── ...
-          ├── target_perframe/
-          |   ├── Breaking_Bad_ep1.npy (of size L x 31)
-          |   ├── ...
-       ```
-   
+  
    
    
    * EK100 dataset:
@@ -103,7 +89,6 @@ For EK100, please find more details at [`RULSTM`](https://github.com/fpv-iplab/r
     ```
     cd memory-and-anticipation-transformer
     ln -s $YOUR_PATH_TO_THUMOS_DATASET data/THUMOS
-    ln -s $YOUR_PATH_TO_TVSERIES_DATASET data/TVSeries
     ln -s $YOUR_PATH_TO_EK_DATASET data/EK100
     ```
 
